@@ -1281,6 +1281,13 @@ export default function App() {
     else localStorage.setItem(THEME_KEY, themeMode)
   }, [themeAplicado, themeMode])
 
+  // Publica la pestaña activa en <html> para que las reglas de CSS puedan
+  // reaccionar (p. ej. ocultar el ticker sticky en 'Hoy' donde ya está
+  // la MatchCard grande visible, y mover el latido rojo a la card).
+  useEffect(() => {
+    document.documentElement.dataset.tab = tab
+  }, [tab])
+
   // Si el dispositivo cambia de claro/oscuro (Mac, iOS, Android), la app se
   // sincroniza al vuelo: adopta el tema del sistema aunque tuvieras un modo
   // fijo. Con addListener de respaldo para Safari/iOS antiguos.

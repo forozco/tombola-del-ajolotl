@@ -1066,11 +1066,19 @@ button,
   flex-shrink: 0;
 }
 
-/* Un solo "latido" en toda la app: el ticker sticky, que es el indicador
-   de en vivo por excelencia (te sigue al hacer scroll, está en todos los
-   tabs). El resto de puntos son rojos pero estáticos, sin competir. */
-.ticker-chip .live-dot {
+/* Regla de "un solo latido en pantalla":
+   - En 'Hoy' la MatchCard grande está visible → el ticker sticky se oculta
+     (redundante) y el latido salta al live-dot de la propia card.
+   - En las otras pestañas ('El Camino', 'Coonstl') no ves la card grande,
+     así que el ticker sticky sigue arriba con su propio latido. */
+:root:not([data-tab='hoy']) .ticker-chip .live-dot,
+:root[data-tab='hoy'] .live-bar .live-dot {
   animation: pulse 1.3s ease-in-out infinite;
+}
+
+/* El ticker sobra en 'Hoy': el partido en vivo ya se ve completo abajo */
+:root[data-tab='hoy'] .live-ticker {
+  display: none;
 }
 
 @keyframes pulse {
@@ -1086,7 +1094,8 @@ button,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ticker-chip .live-dot {
+  :root:not([data-tab='hoy']) .ticker-chip .live-dot,
+  :root[data-tab='hoy'] .live-bar .live-dot {
     animation: none;
   }
 }
