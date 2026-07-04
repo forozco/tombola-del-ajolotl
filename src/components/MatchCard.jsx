@@ -83,9 +83,11 @@ function FriendOutcome({ match, bracket }) {
     )
   }
   const vivos = lOwner.teams.filter((t) => !bracket.eliminated.has(t))
+  const winnerName = TEAMS[match.winner]?.name ?? ''
   return (
     <div className="friend-outcome">
-      <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> avanza ·{' '}
+      <strong style={{ color: wOwner.color }}>{wOwner.name}</strong>
+      {winnerName ? ` avanza con ${winnerName}` : ' avanza'} ·{' '}
       <strong style={{ color: lOwner.color }}>{lOwner.name}</strong>{' '}
       {vivos.length
         ? `sigue vivo con ${vivos.map((t) => TEAMS[t].name).join(' y ')}`
