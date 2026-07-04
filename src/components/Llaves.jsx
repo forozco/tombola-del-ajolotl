@@ -17,32 +17,31 @@ import { IconBracket, IconLista } from './Icons.jsx'
 
 // ── Vista lista: reutiliza MatchCard grande, apilado por ronda ─────────────
 
-// Cada ronda se lee por capas de relevancia (mismo criterio que la pestaña
-// Hoy): primero lo que tiene datos (en vivo → próximos, cronológico), luego
-// los cruces sin definir y al final los terminados. Cada grupo va en su
-// propio grid, así las filas emparejan tarjetas de altura similar y la card
-// en vivo no convive con placeholders vacíos.
+// Cada ronda se lee por capas de estado, todas en orden cronológico:
+//   1. En vivo (arriba, en su propio bloque)
+//   2. Terminados (en medio, en el orden en que se fueron jugando)
+//   3. Por jugar (abajo, el más próximo primero)
+//   4. Por definir (cruces aún sin equipos, al final)
+// Cada grupo va en su propio grid, así las filas emparejan tarjetas de
+// altura similar y la card en vivo no convive con placeholders vacíos.
 
 const grupoDe = (m) => {
+  if (m.live?.state === 'in') return 'envivo'
   if (m.winner || m.live?.state === 'post') return 'terminados'
   if (!m.homeTeam && !m.awayTeam) return 'vacios'
-  return 'activos'
+  return 'porjugar'
 }
 
-const enVivoPrimero = (m) => (m.live?.state === 'in' ? 0 : 1)
 const cronologico = (a, b) =>
   `${a.date}${a.time ?? ''}`.localeCompare(`${b.date}${b.time ?? ''}`)
 
 function gruposDeRonda(matches) {
-  const de = (id) => matches.filter((m) => grupoDe(m) === id)
+  const de = (id) => matches.filter((m) => grupoDe(m) === id).sort(cronologico)
   return [
-    {
-      id: 'activos',
-      titulo: null,
-      matches: de('activos').sort((a, b) => enVivoPrimero(a) - enVivoPrimero(b) || cronologico(a, b)),
-    },
-    { id: 'vacios', titulo: 'Por definir', matches: de('vacios') },
+    { id: 'envivo', titulo: 'En vivo', matches: de('envivo') },
     { id: 'terminados', titulo: 'Terminados', matches: de('terminados') },
+    { id: 'porjugar', titulo: 'Por jugar', matches: de('porjugar') },
+    { id: 'vacios', titulo: 'Por definir', matches: de('vacios') },
   ].filter((g) => g.matches.length > 0)
 }
 
