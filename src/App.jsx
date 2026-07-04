@@ -446,8 +446,11 @@ function Countdown({ matches }) {
   const away = match.awayTeam ? TEAMS[match.awayTeam] : null
   return (
     <div className="countdown">
-      <span className="cd-tag">Siguiente</span>
-      <span className="cd-teams">
+      <div className="cd-head">
+        <span className="cd-tag">Siguiente partido</span>
+        <span className="cd-time">{falta}</span>
+      </div>
+      <div className="cd-teams">
         <span className="cd-team">
           {home && <Bandera teamId={match.homeTeam} />} {home ? home.name : 'Por definir'}
         </span>
@@ -455,8 +458,7 @@ function Countdown({ matches }) {
         <span className="cd-team">
           {away && <Bandera teamId={match.awayTeam} />} {away ? away.name : 'Por definir'}
         </span>
-      </span>
-      <strong className="cd-time">{falta}</strong>
+      </div>
     </div>
   )
 }

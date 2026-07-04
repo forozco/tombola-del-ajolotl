@@ -498,17 +498,22 @@ body {
 
 .countdown {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px 10px;
+  flex-direction: column;
+  gap: 8px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-size: 0.9rem;
-  color: var(--text);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 11px 14px;
   margin-bottom: 16px;
   box-shadow: var(--shadow);
+}
+
+.cd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .cd-tag {
@@ -516,28 +521,35 @@ body {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.09em;
+  color: var(--muted);
+}
+
+.cd-time {
+  font-size: 0.72rem;
+  font-weight: 800;
   color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 .cd-teams {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
+  font-size: 1.02rem;
   font-weight: 700;
 }
 
 .cd-team {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  gap: 7px;
 }
 
-.cd-time {
-  margin-left: auto;
-  color: var(--accent);
-  font-weight: 700;
-  white-space: nowrap;
+.cd-team .bandera {
+  font-size: 1.2em;
 }
 
 .admin-pill {
