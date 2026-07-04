@@ -497,18 +497,47 @@ body {
 }
 
 .countdown {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 10px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px 14px;
-  font-size: 0.85rem;
-  color: var(--muted);
+  font-size: 0.9rem;
+  color: var(--text);
   margin-bottom: 16px;
   box-shadow: var(--shadow);
 }
 
-.countdown strong {
+.cd-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
   color: var(--accent);
+}
+
+.cd-teams {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+}
+
+.cd-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.cd-time {
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .admin-pill {

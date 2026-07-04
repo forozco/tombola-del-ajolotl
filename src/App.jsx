@@ -141,7 +141,7 @@ function Bandera({ teamId, className = '' }) {
   return (
     <span
       className={`bandera ${className}`}
-      style={{ backgroundImage: `url(${FLAG_URLS[team.code]})` }}
+      style={{ backgroundImage: FLAG_URLS[team.code] }}
       title={team.name}
     />
   )
@@ -446,10 +446,17 @@ function Countdown({ matches }) {
   const away = match.awayTeam ? TEAMS[match.awayTeam] : null
   return (
     <div className="countdown">
-      Siguiente: {home ? <Bandera teamId={match.homeTeam} /> : null}{' '}
-      {home ? home.name : 'Por definir'} <span className="mini-vs">vs</span>{' '}
-      {away ? <Bandera teamId={match.awayTeam} /> : null} {away ? away.name : 'Por definir'}{' '}
-      <strong>{falta}</strong>
+      <span className="cd-tag">Siguiente</span>
+      <span className="cd-teams">
+        <span className="cd-team">
+          {home && <Bandera teamId={match.homeTeam} />} {home ? home.name : 'Por definir'}
+        </span>
+        <span className="mini-vs">vs</span>
+        <span className="cd-team">
+          {away && <Bandera teamId={match.awayTeam} />} {away ? away.name : 'Por definir'}
+        </span>
+      </span>
+      <strong className="cd-time">{falta}</strong>
     </div>
   )
 }
