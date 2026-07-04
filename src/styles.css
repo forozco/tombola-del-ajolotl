@@ -911,10 +911,13 @@ body {
 }
 
 /* ── Owner chips ── */
+/* Ancho uniforme para que no queden escalonados (efecto "víbora") cuando
+   se alinean a la derecha junto al marcador */
 .owner-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  min-width: 92px;
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--owner);
@@ -925,15 +928,9 @@ body {
 }
 
 .owner-chip.small {
+  min-width: 80px;
   font-size: 0.7rem;
-  padding: 2px 8px;
-}
-
-.owner-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--owner);
+  padding: 3px 8px;
 }
 
 /* ── Amigos ── */

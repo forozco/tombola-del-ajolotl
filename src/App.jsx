@@ -355,7 +355,6 @@ function Bandera({ teamId, className = '' }) {
 function OwnerChip({ owner, small }) {
   return (
     <span className={`owner-chip${small ? ' small' : ''}`} style={{ '--owner': owner.color }}>
-      <span className="owner-dot" />
       {owner.name}
     </span>
   )
