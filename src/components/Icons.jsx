@@ -39,6 +39,17 @@ export function IconBracket() {
   )
 }
 
+// Icono del toggle "Street Fighter" de El Camino: palanca de arcade
+export function IconArcade() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="6" r="3" />
+      <path d="M12 9v6" />
+      <path d="M5 15h14a1 1 0 0 1 1 1v3H4v-3a1 1 0 0 1 1-1z" />
+    </svg>
+  )
+}
+
 // Icono del toggle "Lista" de El Camino
 export function IconLista() {
   return (

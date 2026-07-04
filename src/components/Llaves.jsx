@@ -1,8 +1,10 @@
 // ── Pestaña "El Camino" ──
-// Dos vistas alternativas del mismo bracket, con toggle segmentado deslizante:
+// Tres vistas alternativas del mismo bracket, con toggle segmentado deslizante:
 //   - Cuadro (gráfico): 4 columnas, líneas que unen las llaves. Bloqueado a un
 //     ancho fijo y con scroll horizontal si no cabe.
 //   - Lista (Bracket): apilado vertical con MatchCards grandes por ronda.
+//   - Street Fighter: el bracket como arcade, cada amigo es un peleador
+//     (vive en StreetFighter.jsx).
 //
 // Este archivo agrupa Cuadro y sus 3 sub-componentes internos (CuadroCard,
 // CuadroTeam, cuadroStatus) porque solo se usan juntos, y el componente
@@ -13,7 +15,8 @@ import { fechaCorta } from '../lib/dates.js'
 import { haptic } from '../haptics.js'
 import { Bandera } from './Bandera.jsx'
 import { MatchCard } from './MatchCard.jsx'
-import { IconBracket, IconLista } from './Icons.jsx'
+import { StreetFighter } from './StreetFighter.jsx'
+import { IconBracket, IconLista, IconArcade } from './Icons.jsx'
 
 // ── Vista lista: reutiliza MatchCard grande, apilado por ronda ─────────────
 
@@ -200,34 +203,37 @@ function Cuadro({ bracket }) {
 
 // ── Pestaña completa: toggle + vista elegida ───────────────────────────────
 
+const VISTAS = [
+  { id: 'cuadro', label: 'Bracket', Icon: IconBracket },
+  { id: 'lista', label: 'Lista', Icon: IconLista },
+  { id: 'sf', label: 'Street Fighter', Icon: IconArcade },
+]
+
 export function Llaves({ bracket, vista, setVista, onPick }) {
+  const activa = Math.max(0, VISTAS.findIndex((v) => v.id === vista))
   return (
     <>
       <div
         className="vista-toggle"
-        style={{ '--active-vista-index': vista === 'cuadro' ? 0 : 1 }}
+        style={{ '--vista-count': VISTAS.length, '--active-vista-index': activa }}
       >
-        <button
-          className={vista === 'cuadro' ? 'active' : ''}
-          onClick={() => {
-            if (vista !== 'cuadro') haptic.soft()
-            setVista('cuadro')
-          }}
-        >
-          <IconBracket /> Bracket
-        </button>
-        <button
-          className={vista === 'lista' ? 'active' : ''}
-          onClick={() => {
-            if (vista !== 'lista') haptic.soft()
-            setVista('lista')
-          }}
-        >
-          <IconLista /> Lista
-        </button>
+        {VISTAS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            className={vista === id ? 'active' : ''}
+            onClick={() => {
+              if (vista !== id) haptic.soft()
+              setVista(id)
+            }}
+          >
+            <Icon /> {label}
+          </button>
+        ))}
       </div>
       {vista === 'cuadro' ? (
         <Cuadro bracket={bracket} />
+      ) : vista === 'sf' ? (
+        <StreetFighter bracket={bracket} />
       ) : (
         <Bracket bracket={bracket} onPick={onPick} />
       )}
