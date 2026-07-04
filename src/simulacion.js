@@ -80,6 +80,16 @@ function seriePenales([a, b]) {
   return pasos
 }
 
+// Posesión virtual: parte de 50-50, deriva suave con una sinusoide y se
+// inclina hacia el ganador para que la barra "cuente" la historia del partido.
+function simPosesion(m, tSeg) {
+  const t = (tSeg - m.kick) / 6
+  const bias = m.winner === 'home' ? 6 : -6
+  const drift = Math.sin(t) * 7
+  const home = Math.max(28, Math.min(72, Math.round(50 + bias + drift)))
+  return { home, away: 100 - home }
+}
+
 export function simLive(tSeg = (Date.now() - START) / 1000) {
   const out = {}
   for (const m of GUION) {
@@ -139,6 +149,7 @@ export function simLive(tSeg = (Date.now() - START) / 1000) {
         halftime: minuto >= 45 && minuto < 48,
         score: scoreStr,
         shootout: {}, winnerId: null, finish: null, goals,
+        possession: simPosesion(m, tSeg),
       }
     }
   }
