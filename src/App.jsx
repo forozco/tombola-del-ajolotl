@@ -5,12 +5,14 @@
 // `hooks/`, y la presentación en `components/`. Este archivo no debería crecer
 // mucho más allá de esto.
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { computeBracket } from './lib/bracket.js'
 import { marcadorTexto, detalleDe } from './lib/matches.js'
 import { useResults } from './hooks/useResults.js'
 import { useLive } from './hooks/useLive.js'
 import { useTheme } from './hooks/useTheme.js'
+import { useRuta, rutaDe } from './hooks/useRuta.js'
+import { useScrollPorRuta } from './hooks/useScrollPorRuta.js'
 import { ActualizacionDisponible } from './components/ActualizacionDisponible.jsx'
 import { PullToRefresh } from './components/PullToRefresh.jsx'
 import { Header } from './components/Header.jsx'
@@ -27,8 +29,11 @@ export default function App() {
   const { live, refetch: refetchLive } = useLive()
   const { themeMode, cyclearTema, tituloTema } = useTheme()
 
-  const [tab, setTab] = useState('hoy')
-  const [vista, setVista] = useState('cuadro')
+  // Pestaña y vista viven en la URL (/, /camino, /camino/lista, /amigos):
+  // un refresh o un link compartido caen en la misma vista. El scroll se
+  // recuerda por ruta y se restaura al volver o recargar.
+  const { tab, vista, setTab, setVista } = useRuta()
+  useScrollPorRuta(rutaDe(tab, vista))
 
   // Publica la pestaña en <html> para que el CSS pueda ajustar el ticker /
   // latido según qué esté visible (ver styles.css > .live-ticker).
