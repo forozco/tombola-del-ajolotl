@@ -449,6 +449,23 @@ button,
   padding: 7px 12px 0;
 }
 
+/* Crónica del partido terminado: sustituye al 'Amigo vs Amigo' neutral con
+   la historia del resultado. Un pelín más grande que el duel-label (0.8 vs
+   0.72) para señalar que es la moraleja de la jugada. La variante 'campeon'
+   ocupa más peso porque es el clímax del torneo. */
+.friend-outcome {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  padding: 8px 12px 2px;
+  line-height: 1.4;
+}
+
+.friend-outcome.campeon {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
 .team-row {
   display: flex;
   align-items: center;

@@ -440,7 +440,44 @@ function finishLabel(match) {
   return 'Final · en los 90 minutos'
 }
 
-function MatchCard({ match, champion, meta, onPick }) {
+// Crónica del amigo en un partido terminado: quién avanza y cómo queda el
+// perdedor (sigue vivo con su otro equipo, o queda eliminado). Reemplaza
+// el "Amigo vs Amigo" neutral una vez que hay ganador.
+function FriendOutcome({ match, bracket }) {
+  const wOwner = OWNER_BY_TEAM[match.winner]
+  const perdedor = match.winner === match.homeTeam ? match.awayTeam : match.homeTeam
+  const lOwner = OWNER_BY_TEAM[perdedor]
+  if (!wOwner || !lOwner) return null
+
+  if (match.id === 'f1') {
+    return (
+      <div className="friend-outcome campeon">
+        🏆 <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> campeón — se lleva los $
+        {POZO.toLocaleString()}
+      </div>
+    )
+  }
+  if (wOwner.id === lOwner.id) {
+    return (
+      <div className="friend-outcome same">
+        <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> avanza con{' '}
+        {TEAMS[match.winner].name}
+      </div>
+    )
+  }
+  const vivos = lOwner.teams.filter((t) => !bracket.eliminated.has(t))
+  return (
+    <div className="friend-outcome">
+      <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> avanza ·{' '}
+      <strong style={{ color: lOwner.color }}>{lOwner.name}</strong>{' '}
+      {vivos.length
+        ? `sigue vivo con ${vivos.map((t) => TEAMS[t].name).join(' y ')}`
+        : 'queda eliminado'}
+    </div>
+  )
+}
+
+function MatchCard({ match, champion, bracket, meta, onPick }) {
   const homeOwner = match.homeTeam ? OWNER_BY_TEAM[match.homeTeam] : null
   const awayOwner = match.awayTeam ? OWNER_BY_TEAM[match.awayTeam] : null
   const duel = homeOwner && awayOwner && homeOwner.id !== awayOwner.id
@@ -451,6 +488,10 @@ function MatchCard({ match, champion, meta, onPick }) {
   const muerteSubita =
     enPenales && (sh[match.homeTeam] ?? 0) + (sh[match.awayTeam] ?? 0) >= 10
   const enTiempoExtra = enVivo && !enPenales && (parseInt(match.live.clock) || 0) > 90
+  // Reemplazamos la etiqueta neutral "Amigo vs Amigo" por la crónica del
+  // resultado cuando ya se decidió y tenemos el bracket para saber si el
+  // perdedor sigue vivo con su otro equipo.
+  const outcome = match.winner && homeOwner && awayOwner && bracket ? true : false
   return (
     <div
       id={`match-${match.id}`}
@@ -483,19 +524,20 @@ function MatchCard({ match, champion, meta, onPick }) {
         </div>
       )}
       {terminado && <div className="live-bar done">{finishLabel(match)}</div>}
-      {duel && (
+      {outcome ? (
+        <FriendOutcome match={match} bracket={bracket} />
+      ) : duel ? (
         <div className="duel-label">
           <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong>
           <span className="mini-vs"> vs </span>
           <strong style={{ color: awayOwner.color }}>{awayOwner.name}</strong>
         </div>
-      )}
-      {homeOwner && awayOwner && homeOwner.id === awayOwner.id && (
+      ) : homeOwner && awayOwner && homeOwner.id === awayOwner.id ? (
         <div className="duel-label same">
           <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong> juega contra sí
           mismo — avanza seguro
         </div>
-      )}
+      ) : null}
       <TeamRow teamId={match.homeTeam} match={match} champion={champion} onPick={onPick} />
       {meta && <GolesDe match={match} teamId={match.homeTeam} />}
       <TeamRow teamId={match.awayTeam} match={match} champion={champion} onPick={onPick} />
@@ -559,7 +601,7 @@ function Bracket({ bracket, onPick }) {
             {bracket.resolved
               .filter((m) => m.round === round)
               .map((m) => (
-                <MatchCard key={m.id} match={m} champion={bracket.champion} onPick={onPick} />
+                <MatchCard key={m.id} match={m} champion={bracket.champion} bracket={bracket} onPick={onPick} />
               ))}
           </div>
         </section>
@@ -800,7 +842,7 @@ function Hoy({ bracket, goToLlaves, onPick }) {
           {deHoy.length > 0 ? (
             <div className="round-matches">
               {deHoy.map((m) => (
-                <MatchCard key={m.id} match={m} champion={bracket.champion} meta onPick={onPick} />
+                <MatchCard key={m.id} match={m} champion={bracket.champion} bracket={bracket} meta onPick={onPick} />
               ))}
             </div>
           ) : (
@@ -828,7 +870,7 @@ function Hoy({ bracket, goToLlaves, onPick }) {
                       abierto={abierto === m.id}
                       onGoTo={() => setAbierto(abierto === m.id ? null : m.id)}
                     />
-                    {abierto === m.id && <MatchCard match={m} champion={bracket.champion} meta />}
+                    {abierto === m.id && <MatchCard match={m} champion={bracket.champion} bracket={bracket} meta />}
                   </div>
                 ))}
               </div>
@@ -847,7 +889,7 @@ function Hoy({ bracket, goToLlaves, onPick }) {
                       abierto={abierto === m.id}
                       onGoTo={() => setAbierto(abierto === m.id ? null : m.id)}
                     />
-                    {abierto === m.id && <MatchCard match={m} champion={bracket.champion} meta />}
+                    {abierto === m.id && <MatchCard match={m} champion={bracket.champion} bracket={bracket} meta />}
                   </div>
                 ))}
               </div>
@@ -953,7 +995,7 @@ function Cuadro({ bracket }) {
                 <div className="cpair" key={i}>
                   {par.map((m) => (
                     <div className="cslot" key={m.id}>
-                      <CuadroCard match={m} champion={bracket.champion} />
+                      <CuadroCard match={m} champion={bracket.champion} bracket={bracket} />
                     </div>
                   ))}
                 </div>
@@ -966,7 +1008,7 @@ function Cuadro({ bracket }) {
           <div className="cuadro-body">
             <div className="cpair solo">
               <div className="cslot">
-                <CuadroCard match={porRonda(3)[0]} champion={bracket.champion} />
+                <CuadroCard match={porRonda(3)[0]} champion={bracket.champion} bracket={bracket} />
               </div>
             </div>
           </div>
