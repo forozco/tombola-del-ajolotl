@@ -670,7 +670,10 @@ body {
 .cuadro {
   display: flex;
   gap: 28px;
-  min-width: max-content;
+  /* Ancho del contenido; centrado si cabe en la pantalla, scroll si no
+     (los márgenes auto se vuelven 0 cuando se desborda) */
+  width: max-content;
+  margin-inline: auto;
 }
 
 .cuadro-col {
@@ -1256,11 +1259,6 @@ body {
   /* Amigos en rejilla que se adapta al ancho */
   .friend-grid {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-
-  .cuadro {
-    justify-content: center;
-    margin: 0 auto;
   }
 
   .champion-banner {
