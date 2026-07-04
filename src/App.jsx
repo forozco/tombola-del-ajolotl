@@ -176,6 +176,11 @@ function MatchCard({ match, champion, meta, onPick }) {
   const duel = homeOwner && awayOwner && homeOwner.id !== awayOwner.id
   const enVivo = match.live?.state === 'in'
   const terminado = match.live?.state === 'post'
+  const sh = match.live?.shootout ?? {}
+  const enPenales = enVivo && Object.values(sh).some((v) => v != null)
+  const muerteSubita =
+    enPenales && (sh[match.homeTeam] ?? 0) + (sh[match.awayTeam] ?? 0) >= 10
+  const enTiempoExtra = enVivo && !enPenales && (parseInt(match.live.clock) || 0) > 90
   return (
     <div
       id={`match-${match.id}`}
@@ -192,7 +197,13 @@ function MatchCard({ match, champion, meta, onPick }) {
       {enVivo && (
         <div className="live-bar">
           <span className="live-dot" />
-          {match.live.halftime ? 'MEDIO TIEMPO' : `EN VIVO · ${match.live.clock}`}
+          {enPenales
+            ? `${muerteSubita ? 'PENALES · MUERTE SÚBITA' : 'PENALES'} · ${TEAMS[match.homeTeam].flag} ${sh[match.homeTeam] ?? 0}–${sh[match.awayTeam] ?? 0} ${TEAMS[match.awayTeam].flag}`
+            : match.live.halftime
+              ? 'MEDIO TIEMPO'
+              : enTiempoExtra
+                ? `TIEMPO EXTRA · ${match.live.clock}`
+                : `EN VIVO · ${match.live.clock}`}
         </div>
       )}
       {terminado && <div className="live-bar done">🏁 {finishLabel(match)}</div>}
@@ -346,14 +357,23 @@ function LiveTicker({ bracket, onVer }) {
   if (!enVivo.length) return null
   return (
     <div className="live-ticker">
-      {enVivo.map((m) => (
-        <button key={m.id} className="ticker-chip" onClick={() => onVer(m)}>
-          <span className="live-dot" />
-          {TEAMS[m.homeTeam].flag} {m.live.score?.[m.homeTeam]}–{m.live.score?.[m.awayTeam]}{' '}
-          {TEAMS[m.awayTeam].flag}
-          <span className="ticker-min">{m.live.halftime ? 'MT' : m.live.clock}</span>
-        </button>
-      ))}
+      {enVivo.map((m) => {
+        const sh = m.live.shootout ?? {}
+        const pens = Object.values(sh).some((v) => v != null)
+        return (
+          <button key={m.id} className="ticker-chip" onClick={() => onVer(m)}>
+            <span className="live-dot" />
+            {TEAMS[m.homeTeam].flag}{' '}
+            {pens
+              ? `${sh[m.homeTeam] ?? 0}–${sh[m.awayTeam] ?? 0}`
+              : `${m.live.score?.[m.homeTeam]}–${m.live.score?.[m.awayTeam]}`}{' '}
+            {TEAMS[m.awayTeam].flag}
+            <span className="ticker-min">
+              {pens ? 'Pens' : m.live.halftime ? 'MT' : m.live.clock}
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -455,7 +475,13 @@ function CuadroTeam({ teamId, match }) {
 
 function cuadroStatus(match) {
   const ev = match.live
-  if (ev?.state === 'in') return ev.halftime ? '⏸ Medio tiempo' : `🔴 ${ev.clock}`
+  if (ev?.state === 'in') {
+    const sh = ev.shootout ?? {}
+    if (Object.values(sh).some((v) => v != null)) {
+      return `🥅 Pen ${sh[match.homeTeam] ?? 0}-${sh[match.awayTeam] ?? 0}`
+    }
+    return ev.halftime ? '⏸ Medio tiempo' : `🔴 ${ev.clock}`
+  }
   if (ev?.state === 'post') {
     if (ev.finish === 'pens') {
       const sh = ev.shootout

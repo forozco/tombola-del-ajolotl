@@ -42,7 +42,8 @@ const GUION = [
   { home: 'arg', away: 'col', kick: 124, winner: 'home', finish: 'ft',
     goals: [G(78, 'home', 'L. Messi')] },
   // Semifinales (fra, esp, mex, arg)
-  { home: 'fra', away: 'esp', kick: 142, winner: 'away', finish: 'pens', dur: 120, pens: [4, 5],
+  // Semifinal con tanda larga: llega a muerte súbita (6-7)
+  { home: 'fra', away: 'esp', kick: 142, winner: 'away', finish: 'pens', dur: 120, pens: [6, 7],
     goals: [] },
   { home: 'mex', away: 'arg', kick: 142, winner: 'away', finish: 'ft',
     goals: [G(10, 'home', 'S. Giménez'), G(75, 'away', 'J. Álvarez'), G(90, 'away', 'L. Messi')] },
@@ -50,6 +51,18 @@ const GUION = [
   { home: 'esp', away: 'arg', kick: 165, winner: 'away', finish: 'aet', dur: 120,
     goals: [G(35, 'home', 'Lamine Yamal'), G(68, 'away', 'J. Álvarez'), G(112, 'away', 'L. Messi')] },
 ]
+
+// Serie de la tanda: [4,3] → [1,0],[1,1],[2,1],[2,2],[3,2],[3,3],[4,3]
+function seriePenales([a, b]) {
+  const pasos = []
+  let x = 0
+  let y = 0
+  while (x < a || y < b) {
+    if (x < a) pasos.push([++x, y])
+    if (y < b) pasos.push([x, ++y])
+  }
+  return pasos
+}
 
 export function simLive(tSeg = (Date.now() - START) / 1000) {
   const out = {}
@@ -68,6 +81,7 @@ export function simLive(tSeg = (Date.now() - START) / 1000) {
       continue
     }
 
+    const finDelJuego = m.kick + dur / VELOCIDAD
     const minuto = Math.min(Math.floor((tSeg - m.kick) * VELOCIDAD), dur)
     const caidos = m.goals.filter((g) => g.min <= minuto)
     const score = { [m.home]: 0, [m.away]: 0 }
@@ -82,6 +96,21 @@ export function simLive(tSeg = (Date.now() - START) / 1000) {
     const scoreStr = { [m.home]: String(score[m.home]), [m.away]: String(score[m.away]) }
 
     if (minuto >= dur) {
+      // Tanda de penales en vivo: un penal por segundo antes del final
+      if (m.pens) {
+        const serie = seriePenales(m.pens)
+        const paso = Math.floor(tSeg - finDelJuego)
+        if (paso < serie.length) {
+          const [pa, pb] = serie[paso]
+          out[key] = {
+            utc, state: 'in', clock: `${dur}'`, halftime: false,
+            score: scoreStr,
+            shootout: { [m.home]: pa, [m.away]: pb },
+            winnerId: null, finish: null, goals,
+          }
+          continue
+        }
+      }
       out[key] = {
         utc, state: 'post', clock: 'FT', halftime: false,
         score: scoreStr,

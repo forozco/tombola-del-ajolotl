@@ -405,8 +405,8 @@ body {
 .goles {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 0 12px 9px 50px;
+  gap: 3px;
+  padding: 8px 12px 10px 50px;
   background: color-mix(in srgb, var(--muted) 4%, transparent);
 }
 
