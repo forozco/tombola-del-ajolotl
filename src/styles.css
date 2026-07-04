@@ -2020,12 +2020,153 @@ body {
   }
 }
 
-/* El toggle ahora lleva 3 vistas: en pantallas chicas el texto se compacta
-   para que "Street Fighter" quepa sin romper la pastilla */
+/* ── Street Fighter · responsive ── */
+
+/* El swipe horizontal del bracket se imanta por columna (ronda por ronda),
+   se siente como pasar pantallas del arcade. Solo en la vista SF para no
+   cambiar el feel del Cuadro clásico. */
+.sf-scroll {
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 12px;
+}
+
+.sf-cuadro .cuadro-col {
+  scroll-snap-align: start;
+}
+
+/* El toggle ahora lleva 3 vistas: en pantallas chicas van sin icono y con
+   texto compacto para que "Street Fighter" quepa sin romper la pastilla */
 @media (max-width: 480px) {
   .vista-toggle button {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
+    gap: 4px;
+    padding: 9px 2px;
+  }
+
+  .vista-toggle button svg {
+    display: none;
+  }
+
+  /* Gabinete compacto: misma ambientación, menos aire */
+  .sf-arcade {
+    padding: 14px 10px 12px;
+  }
+
+  .sf-marquee {
+    font-size: clamp(0.72rem, 4.6vw, 1rem);
+  }
+
+  .sf-submarquee {
+    font-size: 0.4rem;
+    letter-spacing: 0.08em;
+  }
+
+  .sf-roster {
     gap: 5px;
-    padding: 9px 4px;
+  }
+
+  .sf-cell {
+    padding: 6px 2px;
+    gap: 4px;
+  }
+
+  .sf-cell-sprite,
+  .sf-cell-sprite img {
+    height: 60px;
+    max-height: 60px;
+  }
+
+  .sf-cell-name {
+    font-size: 0.38rem;
+  }
+
+  .sf-cell-char {
+    font-size: 0.32rem;
+  }
+
+  .sf-stamp {
+    font-size: 0.72rem;
+  }
+
+  /* Columnas un pelito más angostas: se asoma la siguiente ronda y se
+     entiende que hay más bracket a la derecha */
+  .sf-cuadro .cuadro-col {
+    width: 182px;
+  }
+
+  .sf-scroll {
+    margin: 0 -10px;
+    padding: 0 10px 6px;
+  }
+}
+
+/* Tablet chico: sprites más grandes en el roster */
+@media (min-width: 620px) {
+  .sf-arcade {
+    padding: 22px 18px 18px;
+  }
+
+  .sf-cell-sprite,
+  .sf-cell-sprite img {
+    height: 88px;
+    max-height: 88px;
+  }
+
+  .sf-roster {
+    gap: 9px;
+  }
+}
+
+/* iPad Pro / desktop: el roster completo en una sola fila de 8, como el
+   select screen real, y columnas del bracket con más presencia */
+@media (min-width: 940px) {
+  .sf-marquee {
+    font-size: 1.35rem;
+  }
+
+  .sf-submarquee {
+    font-size: 0.56rem;
+  }
+
+  .sf-select-title {
+    font-size: 0.62rem;
+  }
+
+  .sf-roster {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 10px;
+    max-width: 940px;
+    margin: 0 auto 24px;
+  }
+
+  .sf-cell-sprite,
+  .sf-cell-sprite img {
+    height: 96px;
+    max-height: 96px;
+  }
+
+  .sf-cell-name {
+    font-size: 0.44rem;
+  }
+
+  .sf-cell-char {
+    font-size: 0.38rem;
+  }
+
+  .sf-cuadro .cuadro-col {
+    width: 214px;
+  }
+
+  .sf-fighter {
+    padding: 8px 9px;
+  }
+
+  .sf-face {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sf-insert-coin {
+    font-size: 0.5rem;
   }
 }
