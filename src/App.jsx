@@ -1027,7 +1027,6 @@ function useResults() {
 
   useEffect(() => {
     if (!hasSupabase || ES_SIM) return
-    let active = true
     refetch()
     const unsubscribe = subscribeResults((payload) => {
       const row = payload.new ?? {}
@@ -1048,10 +1047,7 @@ function useResults() {
         if (row.detalle) setDetalles((prev) => ({ ...prev, [row.match_id]: row.detalle }))
       }
     })
-    return () => {
-      active = false
-      unsubscribe()
-    }
+    return () => unsubscribe()
   }, [])
 
   // Registro automático desde el marcador en vivo: ganador + marcador + detalle
