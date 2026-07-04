@@ -776,9 +776,14 @@ function Hoy({ bracket, goToLlaves, onPick }) {
   // Jornada activa: se queda en el día jugado hasta ~2h antes del siguiente
   const jornada = jornadaHoy(porFecha, AHORA())
   const esHoyReal = jornada === todayStr()
-  // Orden cronológico estable — los partidos nunca cambian de lugar; los que
-  // están en vivo se tienen presentes con el ticker fijo de arriba
-  const deHoy = porFecha.filter((m) => m.date === jornada)
+  // Orden por relevancia dentro de la jornada activa: primero los partidos
+  // en vivo, después los que aún faltan (cronológico) y al final los que ya
+  // terminaron. Array.sort es estable, así que dentro de cada categoría se
+  // conserva el orden cronológico que ya trae porFecha.
+  const relevancia = (m) => (m.live?.state === 'in' ? 0 : m.winner ? 2 : 1)
+  const deHoy = porFecha
+    .filter((m) => m.date === jornada)
+    .sort((a, b) => relevancia(a) - relevancia(b))
   const proximos = porFecha.filter((m) => m.date > jornada && !m.winner)
   const jugados = porFecha.filter((m) => m.winner && m.date < jornada).reverse()
   const siguienteFecha = proximos[0]?.date
