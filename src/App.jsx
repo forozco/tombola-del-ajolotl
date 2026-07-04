@@ -748,7 +748,8 @@ function FriendCard({ owner }) {
       <div className="friend-teams">
         {owner.teamStatus.map((t) => (
           <span key={t.id} className={`friend-team${t.out ? ' out' : ''}${t.champ ? ' champ' : ''}`}>
-            <Bandera teamId={t.id} /> {t.name} {t.champ ? '★' : t.out ? '✕' : '●'}
+            <Bandera teamId={t.id} /> {t.name}
+            {t.champ ? ' ★' : ''}
           </span>
         ))}
       </div>

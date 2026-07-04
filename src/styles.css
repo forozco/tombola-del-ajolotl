@@ -85,10 +85,6 @@ body {
   margin-top: 6px;
 }
 
-.bolsa-pill {
-  color: var(--accent);
-}
-
 /* ── Banderas (flag-icons) ── */
 .bandera {
   display: inline-block;
@@ -499,47 +495,42 @@ body {
 .countdown {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
   border-radius: 14px;
-  padding: 11px 14px;
+  padding: 13px 15px;
   margin-bottom: 16px;
-  box-shadow: var(--shadow);
 }
 
 .cd-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 8px;
 }
 
 .cd-tag {
-  font-size: 0.65rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--muted);
 }
 
 .cd-time {
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 13%, transparent);
-  padding: 3px 10px;
-  border-radius: 999px;
   white-space: nowrap;
 }
 
 .cd-teams {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.02rem;
+  gap: 11px;
+  font-size: 1.05rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .cd-team {
@@ -549,7 +540,12 @@ body {
 }
 
 .cd-team .bandera {
-  font-size: 1.2em;
+  font-size: 1.25em;
+}
+
+.cd-teams .mini-vs {
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .admin-pill {
@@ -873,21 +869,25 @@ body {
 .summary-pill {
   flex: 1;
   text-align: center;
-  padding: 10px;
+  padding: 11px 8px;
   border-radius: 12px;
-  font-weight: 700;
-  font-size: 0.85rem;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--muted);
   background: var(--card);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow);
 }
 
 .alive-pill {
-  color: #16a34a;
+  color: var(--text);
 }
 
 .out-pill {
   color: var(--muted);
+}
+
+.bolsa-pill {
+  color: var(--accent);
 }
 
 .out-title {
@@ -898,22 +898,20 @@ body {
 .friend-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-left: 4px solid var(--owner);
   border-radius: 14px;
-  padding: 12px;
-  margin-bottom: 10px;
-  box-shadow: var(--shadow);
+  padding: 13px 14px;
+  margin-bottom: 8px;
 }
 
 .friend-card.dead {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .friend-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .friend-count {
@@ -925,22 +923,25 @@ body {
 .friend-teams {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 7px;
 }
 
 .friend-team {
-  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
   font-weight: 600;
-  padding: 5px 10px;
-  border-radius: 10px;
-  background: color-mix(in srgb, #16a34a 10%, transparent);
-  color: #16a34a;
+  padding: 5px 11px 5px 8px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--muted) 9%, transparent);
+  color: var(--text);
 }
 
 .friend-team.out {
-  background: color-mix(in srgb, var(--muted) 12%, transparent);
   color: var(--muted);
   text-decoration: line-through;
+  opacity: 0.7;
 }
 
 .friend-team.champ {
