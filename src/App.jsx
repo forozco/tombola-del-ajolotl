@@ -1051,7 +1051,7 @@ function useResults() {
   }, [])
 
   // Registro automático desde el marcador en vivo: ganador + marcador + detalle
-  const applyLive = (matchId, teamId, marcador, detalle) => {
+  const applyLive = useCallback((matchId, teamId, marcador, detalle) => {
     setResults((prev) => (prev[matchId] === teamId ? prev : { ...prev, [matchId]: teamId }))
     if (detalle) setDetalles((prev) => ({ ...prev, [matchId]: detalle }))
     if (hasSupabase && !ES_SIM) {
@@ -1059,7 +1059,7 @@ function useResults() {
         ({ error }) => error && console.error('Error al sincronizar:', error.message)
       )
     }
-  }
+  }, [])
 
   // Corrección manual (solo modo admin): toca para marcar, re-toca para deshacer
   const pick = (matchId, teamId) => {
@@ -1261,7 +1261,7 @@ export default function App() {
         }
       }
     }
-  }, [bracket])
+  }, [bracket, applyLive])
 
   return (
     <div className="app">
