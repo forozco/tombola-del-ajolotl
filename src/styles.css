@@ -1027,20 +1027,24 @@ body {
 
 .friend-teams {
   display: flex;
-  flex-wrap: wrap;
   gap: 7px;
 }
 
+/* Los dos países de cada amigo se reparten el ancho por igual (parejitos) */
 .friend-team {
+  flex: 1;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   font-size: 0.85rem;
   font-weight: 600;
-  padding: 5px 11px 5px 8px;
+  padding: 5px 10px;
   border-radius: 9px;
   background: color-mix(in srgb, var(--muted) 9%, transparent);
   color: var(--text);
+  white-space: nowrap;
 }
 
 .friend-team.out {
