@@ -860,12 +860,20 @@ body {
   color: var(--muted);
 }
 
+/* Punto rojo de "en vivo": estático por defecto (color = en vivo) */
 .live-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--live);
-  animation: pulse 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* Un solo "latido" en toda la app: el ticker sticky, que es el indicador
+   de en vivo por excelencia (te sigue al hacer scroll, está en todos los
+   tabs). El resto de puntos son rojos pero estáticos, sin competir. */
+.ticker-chip .live-dot {
+  animation: pulse 1.3s ease-in-out infinite;
 }
 
 @keyframes pulse {
@@ -875,8 +883,14 @@ body {
     transform: scale(1);
   }
   50% {
-    opacity: 0.4;
-    transform: scale(0.8);
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-chip .live-dot {
+    animation: none;
   }
 }
 
