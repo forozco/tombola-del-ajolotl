@@ -1017,12 +1017,21 @@ export default function App() {
     else localStorage.setItem(THEME_KEY, themeMode)
   }, [themeAplicado, themeMode])
 
-  // Si el dispositivo cambia de claro/oscuro, la app se sincroniza al vuelo
+  // Si el dispositivo cambia de claro/oscuro (Mac, iOS, Android), la app se
+  // sincroniza al vuelo: adopta el tema del sistema aunque tuvieras un modo
+  // fijo. Con addListener de respaldo para Safari/iOS antiguos.
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const onChange = (e) => setSysDark(e.matches)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
+    const onChange = (e) => {
+      setSysDark(e.matches)
+      setThemeMode('system')
+    }
+    if (mq.addEventListener) mq.addEventListener('change', onChange)
+    else mq.addListener(onChange)
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange)
+      else mq.removeListener(onChange)
+    }
   }, [])
 
   // El botón cicla: automático → claro → oscuro → automático
