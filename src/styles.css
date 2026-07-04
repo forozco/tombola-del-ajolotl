@@ -1050,6 +1050,14 @@ body {
   opacity: 0.75;
 }
 
+.footer-credito {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
 .footer-version {
   display: block;
   margin-top: 6px;
