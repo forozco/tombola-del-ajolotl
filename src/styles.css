@@ -109,10 +109,8 @@ body {
   color: var(--muted);
 }
 
-.chip-bolsa {
-  color: #fff;
-  border: none;
-  background: var(--accent);
+.bolsa-pill {
+  color: var(--accent);
 }
 
 /* ── Banderas (flag-icons) ── */

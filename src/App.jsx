@@ -695,6 +695,7 @@ function Amigos({ bracket }) {
       <div className="amigos-summary">
         <div className="summary-pill alive-pill">{vivos.length} siguen vivos</div>
         <div className="summary-pill out-pill">{fuera.length} eliminados</div>
+        <div className="summary-pill bolsa-pill">Bolsa ${POZO.toLocaleString()}</div>
       </div>
       <h2 className="round-title">Siguen en la pelea</h2>
       {vivos.map((o) => (
@@ -914,7 +915,7 @@ export default function App() {
             <img className="brand-logo" src="/ajolote.svg" alt="" />
             <div>
               <h1 className="title">Tómbola del Ajolotl</h1>
-              <p className="tagline">Mundial 2026 · Quiniela entre 8 amigos</p>
+              <p className="tagline">Mundial 2026 · Quiniela de los Coonstl</p>
             </div>
           </div>
           <button
@@ -926,7 +927,6 @@ export default function App() {
           </button>
         </div>
         <div className="header-chips">
-          <span className="chip chip-bolsa">Bolsa ${POZO.toLocaleString()} MXN</span>
           <span className="chip">Octavos en adelante</span>
           <span className={`sync-pill${online ? ' online' : ''}`}>
             <span className="estado-dot" />
@@ -960,7 +960,7 @@ export default function App() {
           Llaves
         </button>
         <button className={tab === 'amigos' ? 'active' : ''} onClick={() => setTab('amigos')}>
-          Amigos
+          Coonstl
         </button>
       </nav>
 
