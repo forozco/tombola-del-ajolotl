@@ -35,11 +35,12 @@ function ActualizacionDisponible() {
 // hacia abajo, recarga la app (trae datos frescos y detecta versión nueva).
 function PullToRefresh() {
   const [dist, setDist] = useState(0)
+  const [dragging, setDragging] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const startY = useRef(null)
   const distRef = useRef(0)
-  const UMBRAL = 72
-  const MAX = 110
+  const UMBRAL = 66
+  const MAX = 88
 
   useEffect(() => {
     const onStart = (e) => {
@@ -54,9 +55,11 @@ function PullToRefresh() {
         if (distRef.current) {
           distRef.current = 0
           setDist(0)
+          setDragging(false)
         }
         return
       }
+      setDragging(true)
       const d = Math.min(dy * 0.5, MAX) // resistencia elástica
       distRef.current = d
       setDist(d)
@@ -65,10 +68,11 @@ function PullToRefresh() {
     const onEnd = () => {
       if (startY.current == null) return
       startY.current = null
+      setDragging(false)
       if (distRef.current >= UMBRAL) {
         setRefreshing(true)
         setDist(UMBRAL)
-        setTimeout(() => window.location.reload(), 400)
+        setTimeout(() => window.location.reload(), 550)
       } else {
         distRef.current = 0
         setDist(0)
@@ -86,33 +90,37 @@ function PullToRefresh() {
     }
   }, [refreshing])
 
-  const visible = dist > 0 || refreshing
+  const alto = refreshing ? UMBRAL : dist
   const listo = dist >= UMBRAL
+  // El indicador ocupa altura real y empuja el contenido hacia abajo (no se
+  // encima); el spinner aparece en el hueco que se abre arriba
   return (
     <div
-      className={`ptr${visible ? ' visible' : ''}`}
-      style={{ transform: `translate(-50%, ${visible ? Math.min(dist, MAX) : -20}px)` }}
-      aria-hidden={!visible}
+      className="ptr"
+      style={{ height: alto, transition: dragging ? 'none' : 'height 0.28s ease' }}
+      aria-hidden={alto === 0}
     >
-      <span className={`ptr-spinner${refreshing ? ' spinning' : ''}`}>
-        <svg
-          viewBox="0 0 24 24"
-          width="20"
-          height="20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ transform: refreshing ? undefined : `rotate(${dist * 2.6}deg)` }}
-        >
-          <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-          <path d="M21 3v6h-6" />
-        </svg>
-      </span>
-      <span className="ptr-text">
-        {refreshing ? 'Actualizando…' : listo ? 'Suelta para actualizar' : 'Jala para actualizar'}
-      </span>
+      <div className="ptr-inner" style={{ opacity: Math.min(dist / UMBRAL, 1) }}>
+        <span className={`ptr-spinner${refreshing ? ' spinning' : ''}`}>
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ transform: refreshing ? undefined : `rotate(${dist * 3}deg)` }}
+          >
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+            <path d="M21 3v6h-6" />
+          </svg>
+        </span>
+        <span className="ptr-text">
+          {refreshing ? 'Actualizando…' : listo ? 'Suelta para actualizar' : 'Jala para actualizar'}
+        </span>
+      </div>
     </div>
   )
 }

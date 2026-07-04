@@ -31,9 +31,57 @@
     <link rel="apple-touch-startup-image" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)" href="/splash/828x1792.png" />
     <link rel="apple-touch-startup-image" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)" href="/splash/750x1334.png" />
     <link rel="apple-touch-startup-image" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)" href="/splash/1242x2208.png" />
+    <!-- Splash universal: se pinta al instante y funciona en cualquier iPhone/
+         Android (las apple-touch-startup-image de arriba solo cubren tamaños
+         exactos; esta cubre el resto) -->
+    <style>
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        background: #1e1626;
+        transition: opacity 0.45s ease;
+        -webkit-font-smoothing: antialiased;
+      }
+      #splash.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #splash img {
+        width: 92px;
+        height: 92px;
+        animation: splashpop 0.5s ease;
+      }
+      #splash span {
+        color: #f5eef8;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 800;
+        font-size: 1.25rem;
+        letter-spacing: -0.02em;
+      }
+      @keyframes splashpop {
+        from {
+          transform: scale(0.85);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div id="splash">
+      <img src="/ajolote.svg" alt="" />
+      <span>Tómbola del Ajolotl</span>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

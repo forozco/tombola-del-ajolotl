@@ -1061,24 +1061,21 @@ body {
 }
 
 /* ── Pull to refresh (jalar para actualizar) ── */
+/* Ocupa altura real y empuja el contenido hacia abajo (no se encima) */
 .ptr {
-  position: fixed;
-  top: env(safe-area-inset-top);
-  left: 50%;
-  z-index: 90;
+  height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ptr-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding-top: 6px;
+  gap: 5px;
   color: var(--muted);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.ptr.visible {
-  opacity: 1;
 }
 
 .ptr-spinner {
@@ -1099,6 +1096,7 @@ body {
 .ptr-text {
   font-size: 0.7rem;
   font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 /* La app se prohíbe rebotar en el eje vertical del navegador para que nuestro

@@ -15,3 +15,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 )
+
+// Oculta la splash universal una vez montada la app (con un mínimo visible
+// para que se alcance a apreciar), con desvanecido suave
+const splash = document.getElementById('splash')
+if (splash) {
+  const ocultar = () => {
+    splash.classList.add('hidden')
+    setTimeout(() => splash.remove(), 500)
+  }
+  window.requestAnimationFrame(() => setTimeout(ocultar, 500))
+}
