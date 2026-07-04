@@ -1,25 +1,34 @@
 /* ── Tómbola del Ajolotl ── mobile-first, tema claro/oscuro ── */
 
+/* Modo claro (por defecto). Colores un poco más profundos que en oscuro para
+   asegurar contraste sobre fondo claro, manteniendo la misma familia (armonía):
+   fondo lavanda suave para que las tarjetas blancas se separen por capas. */
 :root {
-  --accent: #e83e8c; /* rosa ajolote */
-  --bg: #faf7fb;
+  --accent: #d92d80; /* rosa ajolote, un punto más profundo para legibilidad */
+  --bg: #f1ecf6;
   --card: #ffffff;
-  --text: #231529;
-  --muted: #7a6b80;
-  --border: #eadfee;
-  --win-bg: #f0fdf4;
-  --win-border: #86efac;
-  --shadow: 0 1px 3px rgba(35, 21, 41, 0.08);
+  --text: #241626;
+  --muted: #6d6175;
+  --border: #e6dcec;
+  --win: #157f3c; /* verde: vivo / ganó */
+  --win-bg: #edfbf1;
+  --win-border: #93ddaa;
+  --live: #d61f2b; /* rojo: en vivo */
+  --shadow: 0 1px 2px rgba(36, 22, 42, 0.05), 0 5px 16px rgba(36, 22, 42, 0.06);
 }
 
+/* Modo oscuro (el que ya te gusta): valores actuales, sin cambios */
 :root[data-theme='dark'] {
+  --accent: #e83e8c;
   --bg: #16101c;
   --card: #221729;
   --text: #f5eef8;
   --muted: #a893b3;
   --border: #372a40;
+  --win: #16a34a;
   --win-bg: #142a1c;
   --win-border: #1e7a3c;
+  --live: #dc2626;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
@@ -117,7 +126,7 @@ body {
 }
 
 .sync-pill.online .estado-dot {
-  background: #16a34a;
+  background: var(--win);
 }
 
 .gol-min {
@@ -152,8 +161,8 @@ body {
 }
 
 .sync-pill.online {
-  color: #16a34a;
-  border-color: color-mix(in srgb, #16a34a 40%, transparent);
+  color: var(--win);
+  border-color: color-mix(in srgb, var(--win) 40%, transparent);
 }
 
 /* ── Campeón ── */
@@ -311,7 +320,7 @@ body {
 }
 
 .check {
-  color: #16a34a;
+  color: var(--win);
   font-weight: 800;
   width: 20px;
   text-align: center;
@@ -398,7 +407,7 @@ body {
 }
 
 .mini-lado.gano {
-  color: #16a34a;
+  color: var(--win);
   font-weight: 800;
 }
 
@@ -459,7 +468,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid color-mix(in srgb, #dc2626 45%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--live) 45%, var(--border));
   background: var(--card);
   color: var(--text);
   font-size: 0.85rem;
@@ -474,7 +483,7 @@ body {
 .ticker-min {
   font-size: 0.72rem;
   font-weight: 800;
-  color: #dc2626;
+  color: var(--live);
 }
 
 /* ── Goles, countdown y admin ── */
@@ -708,7 +717,7 @@ body {
 }
 
 .ccard.playing {
-  border-color: color-mix(in srgb, #dc2626 45%, var(--border));
+  border-color: color-mix(in srgb, var(--live) 45%, var(--border));
 }
 
 .ccard-status {
@@ -720,7 +729,7 @@ body {
 }
 
 .ccard.playing .ccard-status {
-  color: #dc2626;
+  color: var(--live);
 }
 
 .cteam {
@@ -786,14 +795,14 @@ body {
 }
 
 .cteam-check {
-  color: #16a34a;
+  color: var(--win);
   font-weight: 800;
   font-size: 0.8rem;
 }
 
 /* ── Marcador en vivo ── */
 .match-card.playing {
-  border-color: color-mix(in srgb, #dc2626 45%, var(--border));
+  border-color: color-mix(in srgb, var(--live) 45%, var(--border));
 }
 
 .live-bar {
@@ -803,7 +812,7 @@ body {
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #dc2626;
+  color: var(--live);
   padding: 8px 12px 0;
 }
 
@@ -815,7 +824,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #dc2626;
+  background: var(--live);
   animation: pulse 1.2s ease-in-out infinite;
 }
 
