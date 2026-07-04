@@ -733,7 +733,30 @@ function Amigos({ bracket }) {
     const alive = teams.filter((t) => !t.out).length
     return { ...o, teamStatus: teams, alive }
   })
-  const vivos = status.filter((s) => s.alive > 0)
+
+  // Torneo terminado: estado final con ganador destacado, sin "en la pelea"
+  if (bracket.champion) {
+    const campeon = OWNER_BY_TEAM[bracket.champion]
+    const final = bracket.resolved.find((m) => m.id === 'f1')
+    const subTeam = final.winner === final.homeTeam ? final.awayTeam : final.homeTeam
+    const subOwner = subTeam ? OWNER_BY_TEAM[subTeam] : null
+    const ganador = status.find((s) => s.id === campeon.id)
+    const resto = status
+      .filter((s) => s.id !== campeon.id)
+      .sort((a, b) => (a.id === subOwner?.id ? -1 : b.id === subOwner?.id ? 1 : 0))
+    return (
+      <div className="amigos">
+        <h2 className="round-title">Resultado final</h2>
+        <FriendCard owner={ganador} tag={`Campeón · $${POZO.toLocaleString()}`} campeon />
+        <h2 className="round-title out-title">Los demás</h2>
+        {resto.map((o) => (
+          <FriendCard key={o.id} owner={o} tag={o.id === subOwner?.id ? 'Subcampeón' : null} />
+        ))}
+      </div>
+    )
+  }
+
+  const vivos = status.filter((s) => s.alive > 0).sort((a, b) => b.alive - a.alive)
   const fuera = status.filter((s) => s.alive === 0)
 
   return (
@@ -759,15 +782,20 @@ function Amigos({ bracket }) {
   )
 }
 
-function FriendCard({ owner }) {
-  const dead = owner.alive === 0
+function FriendCard({ owner, tag, campeon }) {
+  const dead = owner.alive === 0 && !campeon && !tag
   return (
-    <div className={`friend-card${dead ? ' dead' : ''}`} style={{ '--owner': owner.color }}>
+    <div
+      className={`friend-card${dead ? ' dead' : ''}${campeon ? ' es-campeon' : ''}`}
+      style={{ '--owner': owner.color }}
+    >
       <div className="friend-head">
         <OwnerChip owner={owner} />
-        <span className="friend-count">
-          {dead ? 'sin equipos' : `${owner.alive} de 2 vivos`}
-        </span>
+        {tag ? (
+          <span className={`friend-tag${campeon ? ' campeon' : ''}`}>{tag}</span>
+        ) : (
+          <span className="friend-count">{dead ? 'sin equipos' : `${owner.alive} de 2 vivos`}</span>
+        )}
       </div>
       <div className="friend-teams">
         {owner.teamStatus.map((t) => (
