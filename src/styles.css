@@ -1031,3 +1031,13 @@ body {
   font-weight: 600;
   opacity: 0.75;
 }
+
+.footer-version {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+}

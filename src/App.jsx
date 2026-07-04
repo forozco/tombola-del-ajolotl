@@ -1099,6 +1099,9 @@ export default function App() {
           avanza solo de ronda — aquí nadie captura nada a mano.
         </p>
         <span className="footer-tz">Horarios en tu hora local ({zonaHoraria()})</span>
+        <span className="footer-version">
+          v{__APP_VERSION__} · {__APP_SHA__}
+        </span>
       </footer>
     </div>
   )
