@@ -3,15 +3,19 @@ import { TEAMS, OWNERS, OWNER_BY_TEAM, MATCHES, ROUNDS, POZO } from './data.js'
 import { hasSupabase, fetchResults, subscribeResults, saveResult, deleteResult } from './sync.js'
 import { fetchLive, pairKey } from './live.js'
 
-import { simLive } from './simulacion.js'
+import { simLive, simNow } from './simulacion.js'
 
 // Puerta de emergencia: con ?admin en la URL se puede corregir un resultado
 // a mano (por si la API fallara). En uso normal la app es solo de consulta.
 const ES_ADMIN = new URLSearchParams(window.location.search).has('admin')
 
-// Modo demo: con ?simular la app recorre un torneo ficticio en ~3 minutos,
+// Modo demo: con ?simular la app recorre un torneo ficticio en ~4 minutos,
 // sin tocar Supabase ni el localStorage real.
 const ES_SIM = new URLSearchParams(window.location.search).has('simular')
+
+// El "ahora" de la app: reloj real, o reloj virtual del demo (los días
+// del calendario avanzan conforme corre la simulación)
+const AHORA = () => (ES_SIM ? simNow() : Date.now())
 
 const STORAGE_KEY = 'tombola-ajolotl-v1'
 const THEME_KEY = 'tombola-ajolotl-theme'
@@ -89,8 +93,8 @@ function loadTheme() {
 }
 
 // Fecha local en formato YYYY-MM-DD para comparar contra match.date
-function todayStr() {
-  const d = new Date()
+function todayStr(ms = AHORA()) {
+  const d = new Date(ms)
   const pad = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
@@ -323,9 +327,9 @@ function MiniMatch({ match, onGoTo }) {
 // Chip dinámico: elige solo el siguiente partido por arrancar y se
 // actualiza en vivo; el formato se adapta a qué tan cerca está
 function Countdown({ matches }) {
-  const [ahora, setAhora] = useState(() => Date.now())
+  const [ahora, setAhora] = useState(() => AHORA())
   useEffect(() => {
-    const t = setInterval(() => setAhora(Date.now()), ES_SIM ? 1_000 : 30_000)
+    const t = setInterval(() => setAhora(AHORA()), ES_SIM ? 1_000 : 30_000)
     return () => clearInterval(t)
   }, [])
   const match = matches.find(
