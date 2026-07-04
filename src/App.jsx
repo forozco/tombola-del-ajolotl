@@ -416,10 +416,14 @@ function MiniMatch({ match, onGoTo, bracket, abierto }) {
 
   return (
     <button className={`mini-match${abierto ? ' abierto' : ''}`} onClick={onGoTo}>
+      <span className="mini-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </span>
       <span className="mini-when">
         {fechaCorta(match.date)} · {match.tbd ? 'hora por confirmar' : `${match.time} h`}
         {comoTermino ? ` · ${comoTermino}` : ''}
-        <span className="mini-chevron">{abierto ? '▾' : '▸'}</span>
       </span>
       <span className="mini-teams">
         <span className={`mini-lado${claseLado(match.homeTeam)}`}>
