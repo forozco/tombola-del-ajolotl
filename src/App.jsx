@@ -87,10 +87,15 @@ function loadResults() {
   }
 }
 
-function loadTheme() {
+// Preferencia de tema: 'system' (sigue al dispositivo), 'light' u 'dark'.
+// Por defecto sigue al sistema; si el usuario elige un modo, se recuerda.
+function loadThemeMode() {
   const saved = localStorage.getItem(THEME_KEY)
-  if (saved) return saved
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return saved === 'light' || saved === 'dark' ? saved : 'system'
+}
+
+function systemPrefersDark() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
 // Fecha local en formato YYYY-MM-DD para comparar contra match.date
@@ -162,6 +167,16 @@ function IconLuna() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+    </svg>
+  )
+}
+
+// "Auto": círculo mitad relleno — sigue el tema del dispositivo
+function IconAuto() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none" />
     </svg>
   )
 }
@@ -770,9 +785,11 @@ function Amigos({ bracket }) {
         <h2 className="round-title">Resultado final</h2>
         <FriendCard owner={ganador} tag={`Campeón · $${POZO.toLocaleString()}`} campeon />
         <h2 className="round-title out-title">Los demás</h2>
-        {resto.map((o) => (
-          <FriendCard key={o.id} owner={o} tag={o.id === subOwner?.id ? 'Subcampeón' : null} />
-        ))}
+        <div className="friend-grid">
+          {resto.map((o) => (
+            <FriendCard key={o.id} owner={o} tag={o.id === subOwner?.id ? 'Subcampeón' : null} />
+          ))}
+        </div>
       </div>
     )
   }
@@ -788,15 +805,19 @@ function Amigos({ bracket }) {
         <div className="summary-pill bolsa-pill">Bolsa ${POZO.toLocaleString()}</div>
       </div>
       <h2 className="round-title">Siguen en la pelea</h2>
-      {vivos.map((o) => (
-        <FriendCard key={o.id} owner={o} />
-      ))}
+      <div className="friend-grid">
+        {vivos.map((o) => (
+          <FriendCard key={o.id} owner={o} />
+        ))}
+      </div>
       {fuera.length > 0 && (
         <>
           <h2 className="round-title out-title">Eliminados</h2>
-          {fuera.map((o) => (
-            <FriendCard key={o.id} owner={o} />
-          ))}
+          <div className="friend-grid">
+            {fuera.map((o) => (
+              <FriendCard key={o.id} owner={o} />
+            ))}
+          </div>
         </>
       )}
     </div>
@@ -982,14 +1003,36 @@ function marcadorTexto(m) {
 export default function App() {
   const { results, applyLive, pick, online } = useResults()
   const live = useLive()
-  const [theme, setTheme] = useState(loadTheme)
+  const [themeMode, setThemeMode] = useState(loadThemeMode)
+  const [sysDark, setSysDark] = useState(systemPrefersDark)
   const [tab, setTab] = useState('hoy')
   const [vista, setVista] = useState('cuadro')
 
+  // Tema resuelto: en modo 'system' sigue al dispositivo, si no el elegido
+  const themeAplicado = themeMode === 'system' ? (sysDark ? 'dark' : 'light') : themeMode
+
   useEffect(() => {
-    document.documentElement.dataset.theme = theme
-    localStorage.setItem(THEME_KEY, theme)
-  }, [theme])
+    document.documentElement.dataset.theme = themeAplicado
+    if (themeMode === 'system') localStorage.removeItem(THEME_KEY)
+    else localStorage.setItem(THEME_KEY, themeMode)
+  }, [themeAplicado, themeMode])
+
+  // Si el dispositivo cambia de claro/oscuro, la app se sincroniza al vuelo
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = (e) => setSysDark(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  // El botón cicla: automático → claro → oscuro → automático
+  const siguienteTema = { system: 'light', light: 'dark', dark: 'system' }
+  const tituloTema =
+    themeMode === 'system'
+      ? 'Tema: automático (sigue tu dispositivo)'
+      : themeMode === 'light'
+        ? 'Tema: claro'
+        : 'Tema: oscuro'
 
   const bracket = useMemo(() => computeBracket(results, live), [results, live])
   const champOwner = bracket.champion ? OWNER_BY_TEAM[bracket.champion] : null
@@ -1013,10 +1056,17 @@ export default function App() {
           </div>
           <button
             className="theme-btn"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            aria-label="Cambiar tema"
+            onClick={() => setThemeMode(siguienteTema[themeMode])}
+            aria-label={tituloTema}
+            title={tituloTema}
           >
-            {theme === 'dark' ? <IconSol /> : <IconLuna />}
+            {themeMode === 'system' ? (
+              <IconAuto />
+            ) : themeMode === 'light' ? (
+              <IconSol />
+            ) : (
+              <IconLuna />
+            )}
           </button>
         </div>
         <p className="tagline">

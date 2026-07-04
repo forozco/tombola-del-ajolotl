@@ -932,11 +932,20 @@ body {
   color: var(--muted);
 }
 
+.friend-grid {
+  display: grid;
+  gap: 8px;
+}
+
 .friend-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 13px 14px;
+}
+
+/* Tarjeta de campeón va suelta (fuera del grid): necesita su propio margen */
+.friend-card.es-campeon {
   margin-bottom: 8px;
 }
 
@@ -1040,4 +1049,70 @@ body {
   letter-spacing: 0.04em;
   opacity: 0.5;
   font-variant-numeric: tabular-nums;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Responsive: tablet (iPad) y desktop
+   Mobile-first arriba; aquí se ensancha el contenedor y las listas
+   pasan a rejilla de varias columnas para aprovechar el espacio.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Tablet (iPad vertical y similares) ── */
+@media (min-width: 700px) {
+  .app {
+    max-width: 720px;
+    padding: 24px 20px calc(28px + env(safe-area-inset-bottom));
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  /* Partidos del día y rondas en dos columnas */
+  .round-matches {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  /* Próximos y últimos resultados en dos columnas (sin estirar al expandir) */
+  .mini-list {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  /* Amigos en rejilla que se adapta al ancho */
+  .friend-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+/* ── Desktop ── */
+@media (min-width: 1040px) {
+  .app {
+    max-width: 1000px;
+    padding-top: 32px;
+  }
+
+  /* Rondas de El Camino (vista Lista) en tres columnas */
+  .round-matches {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* El cuadro (bracket) centrado, ya cabe sin tanto scroll */
+  .cuadro {
+    justify-content: center;
+    margin: 0 auto;
+  }
+
+  /* Un pelín más de aire en las tarjetas grandes */
+  .cd-teams {
+    font-size: 1.1rem;
+  }
+}
+
+/* En pantallas anchas, el header respira sin estirarse de más */
+@media (min-width: 700px) {
+  .champion-banner {
+    padding: 18px 20px;
+  }
 }
