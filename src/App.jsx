@@ -911,7 +911,7 @@ export default function App() {
       <header className="header">
         <div className="header-top">
           <div className="brand">
-            <img className="brand-logo" src="/icon.svg" alt="" />
+            <img className="brand-logo" src="/ajolote.svg" alt="" />
             <div>
               <h1 className="title">Tómbola del Ajolotl</h1>
               <p className="tagline">Mundial 2026 · Quiniela entre 8 amigos</p>
