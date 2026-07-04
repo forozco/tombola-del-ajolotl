@@ -346,6 +346,37 @@ body {
   font-weight: 600;
 }
 
+.mini-lado.gano {
+  color: #16a34a;
+  font-weight: 800;
+}
+
+.mini-lado.perdio {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.mini-resumen {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mini-chevron {
+  float: right;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.mini-item {
+  display: grid;
+  gap: 6px;
+}
+
+.mini-match.abierto {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
 .mini-vs {
   color: var(--muted);
   font-weight: 400;
@@ -355,12 +386,6 @@ body {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--muted);
-}
-
-.mini-winner {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #16a34a;
 }
 
 /* ── Ticker de partidos en vivo ── */

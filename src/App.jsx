@@ -269,56 +269,100 @@ function Bracket({ bracket, onPick }) {
 }
 
 // Renglón compacto para listas de próximos partidos y resultados
-function MiniMatch({ match, onGoTo }) {
+function MiniMatch({ match, onGoTo, bracket, abierto }) {
   const home = match.homeTeam ? TEAMS[match.homeTeam] : null
   const away = match.awayTeam ? TEAMS[match.awayTeam] : null
-  const winner = match.winner ? TEAMS[match.winner] : null
   const homeOwner = match.homeTeam ? OWNER_BY_TEAM[match.homeTeam] : null
   const awayOwner = match.awayTeam ? OWNER_BY_TEAM[match.awayTeam] : null
   const ev = match.live
+  const terminado = Boolean(match.winner) && home && away
   const marcador =
     ev && ev.state !== 'pre' && home && away
-      ? ` ${ev.score?.[match.homeTeam]} - ${ev.score?.[match.awayTeam]} `
+      ? ` ${ev.score?.[match.homeTeam] ?? '?'} – ${ev.score?.[match.awayTeam] ?? '?'} `
       : null
-  const como =
+  const comoTermino =
     ev?.finish === 'pens'
-      ? ` en penales (${ev.shootout?.[match.winner]}-${
-          ev.shootout?.[match.winner === match.homeTeam ? match.awayTeam : match.homeTeam]
-        })`
+      ? `penales ${ev.shootout?.[match.homeTeam] ?? '?'}-${ev.shootout?.[match.awayTeam] ?? '?'}`
       : ev?.finish === 'aet'
-        ? ' en tiempo extra'
-        : ''
+        ? 'tiempo extra'
+        : null
+  const claseLado = (teamId) =>
+    terminado ? (match.winner === teamId ? ' gano' : ' perdio') : ''
+
+  // Resumen para la quiniela: quién avanza y cómo queda el amigo que perdió
+  let resumen = null
+  if (terminado) {
+    const wOwner = OWNER_BY_TEAM[match.winner]
+    const perdedor = match.winner === match.homeTeam ? match.awayTeam : match.homeTeam
+    const lOwner = OWNER_BY_TEAM[perdedor]
+    if (match.id === 'f1') {
+      resumen = (
+        <>
+          🏆 <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> campeón — se lleva
+          los ${POZO.toLocaleString()}
+        </>
+      )
+    } else if (wOwner.id === lOwner.id) {
+      resumen = (
+        <>
+          😎 <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> avanza con{' '}
+          {TEAMS[match.winner].name}
+        </>
+      )
+    } else {
+      const vivos = lOwner.teams.filter((t) => !bracket.eliminated.has(t))
+      resumen = (
+        <>
+          🌸 <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> avanza ·{' '}
+          <strong style={{ color: lOwner.color }}>{lOwner.name}</strong>{' '}
+          {vivos.length
+            ? `sigue vivo con ${vivos.map((t) => TEAMS[t].name).join(' y ')}`
+            : 'queda eliminado 💀'}
+        </>
+      )
+    }
+  }
+
   return (
-    <button className="mini-match" onClick={onGoTo}>
+    <button className={`mini-match${abierto ? ' abierto' : ''}`} onClick={onGoTo}>
       <span className="mini-when">
         {fechaCorta(match.date)} · {match.tbd ? 'hora por confirmar' : `${match.time} h`}
+        {comoTermino ? ` · ${comoTermino}` : ''}
+        <span className="mini-chevron">{abierto ? '▾' : '▸'}</span>
       </span>
       <span className="mini-teams">
-        {home ? `${home.flag} ${home.name}` : 'Por definir'}
-        {marcador ? <strong className="mini-score">{marcador}</strong> : <span className="mini-vs"> vs </span>}
-        {away ? `${away.flag} ${away.name}` : 'Por definir'}
+        <span className={`mini-lado${claseLado(match.homeTeam)}`}>
+          {home ? `${home.flag} ${home.name}` : 'Por definir'}
+        </span>
+        {marcador ? (
+          <strong className="mini-score">{marcador}</strong>
+        ) : (
+          <span className="mini-vs"> vs </span>
+        )}
+        <span className={`mini-lado${claseLado(match.awayTeam)}`}>
+          {away ? `${away.flag} ${away.name}` : 'Por definir'}
+        </span>
       </span>
-      {homeOwner && awayOwner && (
-        <span className="mini-duel">
-          {homeOwner.id === awayOwner.id ? (
-            <>
-              😎 <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong> avanza
-              seguro
-            </>
-          ) : (
-            <>
-              ⚔️ <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong>
-              <span className="mini-vs"> vs </span>
-              <strong style={{ color: awayOwner.color }}>{awayOwner.name}</strong>
-            </>
-          )}
-        </span>
-      )}
-      {winner && (
-        <span className="mini-winner">
-          ✓ ganó {winner.flag} {winner.name}
-          {como}
-        </span>
+      {resumen ? (
+        <span className="mini-resumen">{resumen}</span>
+      ) : (
+        homeOwner &&
+        awayOwner && (
+          <span className="mini-duel">
+            {homeOwner.id === awayOwner.id ? (
+              <>
+                😎 <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong> avanza
+                seguro
+              </>
+            ) : (
+              <>
+                ⚔️ <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong>
+                <span className="mini-vs"> vs </span>
+                <strong style={{ color: awayOwner.color }}>{awayOwner.name}</strong>
+              </>
+            )}
+          </span>
+        )
       )}
     </button>
   )
@@ -385,6 +429,8 @@ function LiveTicker({ bracket, onVer }) {
 // Tab "Hoy": partidos del día, los que vienen y los últimos resultados
 function Hoy({ bracket, goToLlaves, onPick }) {
   const hoy = todayStr()
+  // Renglón expandido: tocar un partido de las listas abre su detalle completo
+  const [abierto, setAbierto] = useState(null)
   const porFecha = [...bracket.resolved].sort((a, b) =>
     `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)
   )
@@ -422,7 +468,15 @@ function Hoy({ bracket, goToLlaves, onPick }) {
           <h2 className="round-title next-title">📆 Próximos partidos</h2>
           <div className="mini-list">
             {proximos.slice(0, 5).map((m) => (
-              <MiniMatch key={m.id} match={m} onGoTo={goToLlaves} />
+              <div key={m.id} className="mini-item">
+                <MiniMatch
+                  match={m}
+                  bracket={bracket}
+                  abierto={abierto === m.id}
+                  onGoTo={() => setAbierto(abierto === m.id ? null : m.id)}
+                />
+                {abierto === m.id && <MatchCard match={m} champion={bracket.champion} meta />}
+              </div>
             ))}
           </div>
         </>
@@ -433,7 +487,15 @@ function Hoy({ bracket, goToLlaves, onPick }) {
           <h2 className="round-title next-title">✅ Últimos resultados</h2>
           <div className="mini-list">
             {jugados.slice(0, 5).map((m) => (
-              <MiniMatch key={m.id} match={m} onGoTo={goToLlaves} />
+              <div key={m.id} className="mini-item">
+                <MiniMatch
+                  match={m}
+                  bracket={bracket}
+                  abierto={abierto === m.id}
+                  onGoTo={() => setAbierto(abierto === m.id ? null : m.id)}
+                />
+                {abierto === m.id && <MatchCard match={m} champion={bracket.champion} meta />}
+              </div>
             ))}
           </div>
         </>
