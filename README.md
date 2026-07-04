@@ -65,3 +65,9 @@ alter table public.resultados add column if not exists marcador text;
 ```
 
 (Sin la columna, la app igual guarda al ganador — solo omite el marcador.)
+
+## Créditos
+
+- Ícono de ajolote: [caro-asercion](https://game-icons.net/1x1/caro-asercion/axolotl.html)
+  vía game-icons.net, licencia [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+- Banderas: [flag-icons](https://github.com/lipis/flag-icons), licencia MIT.

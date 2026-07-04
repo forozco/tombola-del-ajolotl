@@ -4,6 +4,7 @@ import { hasSupabase, fetchResults, subscribeResults, saveResult, deleteResult }
 import { fetchLive, pairKey } from './live.js'
 
 import { simLive, simNow } from './simulacion.js'
+import { FLAG_URLS } from './banderas.js'
 
 // Puerta de emergencia: con ?admin en la URL se puede corregir un resultado
 // a mano (por si la API fallara). En uso normal la app es solo de consulta.
@@ -115,6 +116,19 @@ function fechaCorta(dateStr) {
   })
 }
 
+// Bandera seria cuadrada (SVG oficial de flag-icons)
+function Bandera({ teamId, className = '' }) {
+  const team = TEAMS[teamId]
+  if (!team) return <span className={`bandera bandera-vacia ${className}`} />
+  return (
+    <span
+      className={`bandera ${className}`}
+      style={{ backgroundImage: `url(${FLAG_URLS[team.code]})` }}
+      title={team.name}
+    />
+  )
+}
+
 function OwnerChip({ owner, small }) {
   return (
     <span className={`owner-chip${small ? ' small' : ''}`} style={{ '--owner': owner.color }}>
@@ -136,7 +150,9 @@ function TeamRow({ teamId, match, champion, onPick }) {
   if (!team) {
     return (
       <div className="team-row pending">
-        <span className="flag">·</span>
+        <span className="flag">
+          <Bandera />
+        </span>
         <span className="team-name">Por definir</span>
       </div>
     )
@@ -146,12 +162,14 @@ function TeamRow({ teamId, match, champion, onPick }) {
       className={`team-row${isWinner ? ' winner' : ''}${isLoser ? ' loser' : ''}${admin ? ' admin' : ''}`}
       onClick={admin ? () => onPick(match.id, teamId) : undefined}
     >
-      <span className="flag">{team.flag}</span>
+      <span className="flag">
+        <Bandera teamId={teamId} />
+      </span>
       <span className="team-name">{team.name}</span>
       <OwnerChip owner={owner} small />
       {score != null && <span className="score">{score}</span>}
       {match.winner && (
-        <span className="check">{isWinner ? (champion === teamId ? '🏆' : '✓') : ''}</span>
+        <span className="check">{isWinner ? (champion === teamId ? '★' : '✓') : ''}</span>
       )}
     </div>
   )
@@ -168,7 +186,7 @@ function finishLabel(match) {
       match.winner === match.homeTeam
         ? `${sh?.[match.homeTeam] ?? '?'}-${sh?.[match.awayTeam] ?? '?'}`
         : `${sh?.[match.awayTeam] ?? '?'}-${sh?.[match.homeTeam] ?? '?'}`
-    return `Final · penales ${marcadorPens}${ganador ? ` para ${ganador.flag} ${ganador.name}` : ''}`
+    return `Final · penales ${marcadorPens}${ganador ? ` para ${ganador.name}` : ''}`
   }
   if (ev.finish === 'aet') return 'Final · en tiempo extra'
   return 'Final · en los 90 minutos'
@@ -194,31 +212,40 @@ function MatchCard({ match, champion, meta, onPick }) {
         <div className="match-meta">
           <span className="round-chip">{ROUNDS[match.round]}</span>
           <span className="match-time">
-            {match.tbd ? '🕐 hora por confirmar' : `🕐 ${match.time} h`}
+            {match.tbd ? 'hora por confirmar' : `${match.time} h`}
           </span>
         </div>
       )}
       {enVivo && (
         <div className="live-bar">
           <span className="live-dot" />
-          {enPenales
-            ? `${muerteSubita ? 'PENALES · MUERTE SÚBITA' : 'PENALES'} · ${TEAMS[match.homeTeam].flag} ${sh[match.homeTeam] ?? 0}–${sh[match.awayTeam] ?? 0} ${TEAMS[match.awayTeam].flag}`
-            : match.live.halftime
-              ? 'MEDIO TIEMPO'
-              : enTiempoExtra
-                ? `TIEMPO EXTRA · ${match.live.clock}`
-                : `EN VIVO · ${match.live.clock}`}
+          {enPenales ? (
+            <>
+              {muerteSubita ? 'PENALES · MUERTE SÚBITA' : 'PENALES'} ·{' '}
+              <Bandera teamId={match.homeTeam} /> {sh[match.homeTeam] ?? 0}–
+              {sh[match.awayTeam] ?? 0} <Bandera teamId={match.awayTeam} />
+            </>
+          ) : match.live.halftime ? (
+            'MEDIO TIEMPO'
+          ) : enTiempoExtra ? (
+            `TIEMPO EXTRA · ${match.live.clock}`
+          ) : (
+            `EN VIVO · ${match.live.clock}`
+          )}
         </div>
       )}
-      {terminado && <div className="live-bar done">🏁 {finishLabel(match)}</div>}
+      {terminado && <div className="live-bar done">{finishLabel(match)}</div>}
       {duel && (
         <div className="duel-label">
-          ⚔️ {homeOwner.name} vs {awayOwner.name}
+          <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong>
+          <span className="mini-vs"> vs </span>
+          <strong style={{ color: awayOwner.color }}>{awayOwner.name}</strong>
         </div>
       )}
       {homeOwner && awayOwner && homeOwner.id === awayOwner.id && (
         <div className="duel-label same">
-          😎 ¡{homeOwner.name} juega contra sí mismo — avanza seguro!
+          <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong> juega contra sí
+          mismo — avanza seguro
         </div>
       )}
       <TeamRow teamId={match.homeTeam} match={match} champion={champion} onPick={onPick} />
@@ -237,7 +264,7 @@ function GolesDe({ match, teamId }) {
     <div className="goles">
       {goles.map((g, i) => (
         <span key={i} className="gol">
-          ⚽ {g.minute} {g.player}
+          <span className="gol-min">{g.minute}</span> {g.player}
           {g.penalty ? ' (penal)' : ''}
           {g.ownGoal ? ' (autogol)' : ''}
         </span>
@@ -251,10 +278,7 @@ function Bracket({ bracket, onPick }) {
     <div className="bracket">
       {ROUNDS.map((label, round) => (
         <section key={label} className="round">
-          <h2 className="round-title">
-            {round === 3 ? '🏆 ' : ''}
-            {label}
-          </h2>
+          <h2 className="round-title">{label}</h2>
           <div className="round-matches">
             {bracket.resolved
               .filter((m) => m.round === round)
@@ -298,14 +322,14 @@ function MiniMatch({ match, onGoTo, bracket, abierto }) {
     if (match.id === 'f1') {
       resumen = (
         <>
-          🏆 <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> campeón — se lleva
-          los ${POZO.toLocaleString()}
+          <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> campeón — se lleva los
+          ${POZO.toLocaleString()}
         </>
       )
     } else if (wOwner.id === lOwner.id) {
       resumen = (
         <>
-          😎 <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> avanza con{' '}
+          <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> avanza con{' '}
           {TEAMS[match.winner].name}
         </>
       )
@@ -313,11 +337,11 @@ function MiniMatch({ match, onGoTo, bracket, abierto }) {
       const vivos = lOwner.teams.filter((t) => !bracket.eliminated.has(t))
       resumen = (
         <>
-          🌸 <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> avanza ·{' '}
+          <strong style={{ color: wOwner.color }}>{wOwner.name}</strong> avanza ·{' '}
           <strong style={{ color: lOwner.color }}>{lOwner.name}</strong>{' '}
           {vivos.length
             ? `sigue vivo con ${vivos.map((t) => TEAMS[t].name).join(' y ')}`
-            : 'queda eliminado 💀'}
+            : 'queda eliminado'}
         </>
       )
     }
@@ -332,7 +356,13 @@ function MiniMatch({ match, onGoTo, bracket, abierto }) {
       </span>
       <span className="mini-teams">
         <span className={`mini-lado${claseLado(match.homeTeam)}`}>
-          {home ? `${home.flag} ${home.name}` : 'Por definir'}
+          {home ? (
+            <>
+              <Bandera teamId={match.homeTeam} /> {home.name}
+            </>
+          ) : (
+            'Por definir'
+          )}
         </span>
         {marcador ? (
           <strong className="mini-score">{marcador}</strong>
@@ -340,7 +370,13 @@ function MiniMatch({ match, onGoTo, bracket, abierto }) {
           <span className="mini-vs"> vs </span>
         )}
         <span className={`mini-lado${claseLado(match.awayTeam)}`}>
-          {away ? `${away.flag} ${away.name}` : 'Por definir'}
+          {away ? (
+            <>
+              <Bandera teamId={match.awayTeam} /> {away.name}
+            </>
+          ) : (
+            'Por definir'
+          )}
         </span>
       </span>
       {resumen ? (
@@ -351,12 +387,12 @@ function MiniMatch({ match, onGoTo, bracket, abierto }) {
           <span className="mini-duel">
             {homeOwner.id === awayOwner.id ? (
               <>
-                😎 <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong> avanza
+                <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong> avanza
                 seguro
               </>
             ) : (
               <>
-                ⚔️ <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong>
+                <strong style={{ color: homeOwner.color }}>{homeOwner.name}</strong>
                 <span className="mini-vs"> vs </span>
                 <strong style={{ color: awayOwner.color }}>{awayOwner.name}</strong>
               </>
@@ -392,8 +428,10 @@ function Countdown({ matches }) {
   const away = match.awayTeam ? TEAMS[match.awayTeam] : null
   return (
     <div className="countdown">
-      ⏳ Siguiente: {home ? `${home.flag} ${home.name}` : 'Por definir'} vs{' '}
-      {away ? `${away.flag} ${away.name}` : 'Por definir'} <strong>{falta}</strong>
+      Siguiente: {home ? <Bandera teamId={match.homeTeam} /> : null}{' '}
+      {home ? home.name : 'Por definir'} <span className="mini-vs">vs</span>{' '}
+      {away ? <Bandera teamId={match.awayTeam} /> : null} {away ? away.name : 'Por definir'}{' '}
+      <strong>{falta}</strong>
     </div>
   )
 }
@@ -411,11 +449,11 @@ function LiveTicker({ bracket, onVer }) {
         return (
           <button key={m.id} className="ticker-chip" onClick={() => onVer(m)}>
             <span className="live-dot" />
-            {TEAMS[m.homeTeam].flag}{' '}
+            <Bandera teamId={m.homeTeam} />{' '}
             {pens
               ? `${sh[m.homeTeam] ?? 0}–${sh[m.awayTeam] ?? 0}`
               : `${m.live.score?.[m.homeTeam]}–${m.live.score?.[m.awayTeam]}`}{' '}
-            {TEAMS[m.awayTeam].flag}
+            <Bandera teamId={m.awayTeam} />
             <span className="ticker-min">
               {pens ? 'Pens' : m.live.halftime ? 'MT' : m.live.clock}
             </span>
@@ -444,7 +482,7 @@ function Hoy({ bracket, goToLlaves, onPick }) {
   return (
     <div className="hoy">
       <Countdown matches={porFecha} />
-      <h2 className="round-title">📅 Hoy · {fechaLarga(hoy)}</h2>
+      <h2 className="round-title">Hoy · {fechaLarga(hoy)}</h2>
       {deHoy.length > 0 ? (
         <div className="round-matches">
           {deHoy.map((m) => (
@@ -453,7 +491,6 @@ function Hoy({ bracket, goToLlaves, onPick }) {
         </div>
       ) : (
         <div className="today-empty">
-          <div className="today-empty-emoji">😴</div>
           <p>Hoy no hay partidos de la quiniela.</p>
           {siguienteFecha && (
             <p className="today-empty-next">
@@ -465,7 +502,7 @@ function Hoy({ bracket, goToLlaves, onPick }) {
 
       {proximos.length > 0 && (
         <>
-          <h2 className="round-title next-title">📆 Próximos partidos</h2>
+          <h2 className="round-title next-title">Próximos partidos</h2>
           <div className="mini-list">
             {proximos.slice(0, 5).map((m) => (
               <div key={m.id} className="mini-item">
@@ -484,7 +521,7 @@ function Hoy({ bracket, goToLlaves, onPick }) {
 
       {jugados.length > 0 && (
         <>
-          <h2 className="round-title next-title">✅ Últimos resultados</h2>
+          <h2 className="round-title next-title">Últimos resultados</h2>
           <div className="mini-list">
             {jugados.slice(0, 5).map((m) => (
               <div key={m.id} className="mini-item">
@@ -517,14 +554,18 @@ function CuadroTeam({ teamId, match }) {
   if (!team) {
     return (
       <div className="cteam pending">
-        <span className="cteam-flag">🛡️</span>
+        <span className="cteam-flag">
+          <Bandera />
+        </span>
         <span className="cteam-name">A definir</span>
       </div>
     )
   }
   return (
     <div className={`cteam${isWinner ? ' winner' : ''}${isLoser ? ' loser' : ''}`}>
-      <span className="cteam-flag">{team.flag}</span>
+      <span className="cteam-flag">
+        <Bandera teamId={teamId} />
+      </span>
       <span className="cteam-mid">
         <span className="cteam-name">{team.name}</span>
         {owner && (
@@ -544,9 +585,9 @@ function cuadroStatus(match) {
   if (ev?.state === 'in') {
     const sh = ev.shootout ?? {}
     if (Object.values(sh).some((v) => v != null)) {
-      return `🥅 Pen ${sh[match.homeTeam] ?? 0}-${sh[match.awayTeam] ?? 0}`
+      return `Penales ${sh[match.homeTeam] ?? 0}-${sh[match.awayTeam] ?? 0}`
     }
-    return ev.halftime ? '⏸ Medio tiempo' : `🔴 ${ev.clock}`
+    return ev.halftime ? 'Medio tiempo' : `En vivo · ${ev.clock}`
   }
   if (ev?.state === 'post') {
     if (ev.finish === 'pens') {
@@ -566,7 +607,7 @@ function CuadroCard({ match, champion }) {
     <div className={`ccard${match.winner ? ' decided' : ''}${enVivo ? ' playing' : ''}`}>
       <div className="ccard-status">
         {cuadroStatus(match)}
-        {champion && match.id === 'f1' && match.winner ? ' · 🏆' : ''}
+        {champion && match.id === 'f1' && match.winner ? ' · campeón' : ''}
       </div>
       <CuadroTeam teamId={match.homeTeam} match={match} />
       <CuadroTeam teamId={match.awayTeam} match={match} />
@@ -603,7 +644,7 @@ function Cuadro({ bracket }) {
           </div>
         ))}
         <div className="cuadro-col">
-          <div className="cuadro-col-title">🏆 Final</div>
+          <div className="cuadro-col-title">Final</div>
           <div className="cuadro-body">
             <div className="cpair solo">
               <div className="cslot">
@@ -634,8 +675,8 @@ function Amigos({ bracket }) {
   return (
     <div className="amigos">
       <div className="amigos-summary">
-        <div className="summary-pill alive-pill">🌸 {vivos.length} siguen vivos</div>
-        <div className="summary-pill out-pill">💀 {fuera.length} eliminados</div>
+        <div className="summary-pill alive-pill">{vivos.length} siguen vivos</div>
+        <div className="summary-pill out-pill">{fuera.length} eliminados</div>
       </div>
       <h2 className="round-title">Siguen en la pelea</h2>
       {vivos.map((o) => (
@@ -643,7 +684,7 @@ function Amigos({ bracket }) {
       ))}
       {fuera.length > 0 && (
         <>
-          <h2 className="round-title out-title">Eliminados 🫡</h2>
+          <h2 className="round-title out-title">Eliminados</h2>
           {fuera.map((o) => (
             <FriendCard key={o.id} owner={o} />
           ))}
@@ -660,13 +701,13 @@ function FriendCard({ owner }) {
       <div className="friend-head">
         <OwnerChip owner={owner} />
         <span className="friend-count">
-          {dead ? 'sin equipos 😵' : `${owner.alive} de 2 vivos`}
+          {dead ? 'sin equipos' : `${owner.alive} de 2 vivos`}
         </span>
       </div>
       <div className="friend-teams">
         {owner.teamStatus.map((t) => (
           <span key={t.id} className={`friend-team${t.out ? ' out' : ''}${t.champ ? ' champ' : ''}`}>
-            {t.flag} {t.name} {t.champ ? '🏆' : t.out ? '✕' : '●'}
+            <Bandera teamId={t.id} /> {t.name} {t.champ ? '★' : t.out ? '✕' : '●'}
           </span>
         ))}
       </div>
@@ -852,7 +893,7 @@ export default function App() {
       <header className="header">
         <div className="header-top">
           <h1 className="title">
-            <span className="title-emoji">🌸</span> Tómbola del Ajolotl
+            <img className="title-ajolote" src="/ajolote.svg" alt="" /> Tómbola del Ajolotl
           </h1>
           <button
             className="theme-btn"
@@ -865,10 +906,11 @@ export default function App() {
         <p className="subtitle">
           Mundial 2026 · Octavos en adelante · Bolsa <strong>${POZO.toLocaleString()} MXN</strong>
           <span className={`sync-pill${online ? ' online' : ''}`}>
-            {online ? '🟢 En vivo' : '⚪ Local'}
+            <span className="estado-dot" />
+            {online ? 'En vivo' : 'Local'}
           </span>
-          {ES_ADMIN && <span className="sync-pill admin-pill">🔧 admin</span>}
-          {ES_SIM && <span className="sync-pill admin-pill">🎬 demo</span>}
+          {ES_ADMIN && <span className="sync-pill admin-pill">admin</span>}
+          {ES_SIM && <span className="sync-pill admin-pill">demo</span>}
         </p>
       </header>
 
@@ -877,10 +919,11 @@ export default function App() {
           <div className="champion-trophy">🏆</div>
           <div>
             <div className="champion-team">
-              {TEAMS[bracket.champion].flag} {TEAMS[bracket.champion].name} — ¡Campeón del Mundo!
+              <Bandera teamId={bracket.champion} /> {TEAMS[bracket.champion].name} — ¡Campeón del
+              Mundo!
             </div>
             <div className="champion-owner">
-              <strong>{champOwner.name}</strong> se lleva la bolsa de ${POZO.toLocaleString()} MXN 🎉
+              <strong>{champOwner.name}</strong> se lleva la bolsa de ${POZO.toLocaleString()} MXN
             </div>
           </div>
         </div>
@@ -888,13 +931,13 @@ export default function App() {
 
       <nav className="tabs">
         <button className={tab === 'hoy' ? 'active' : ''} onClick={() => setTab('hoy')}>
-          📅 Hoy
+          Hoy
         </button>
         <button className={tab === 'llaves' ? 'active' : ''} onClick={() => setTab('llaves')}>
-          🏆 Llaves
+          Llaves
         </button>
         <button className={tab === 'amigos' ? 'active' : ''} onClick={() => setTab('amigos')}>
-          🌸 Amigos
+          Amigos
         </button>
       </nav>
 
@@ -918,10 +961,10 @@ export default function App() {
               className={vista === 'cuadro' ? 'active' : ''}
               onClick={() => setVista('cuadro')}
             >
-              🗺️ Cuadro
+              Cuadro
             </button>
             <button className={vista === 'lista' ? 'active' : ''} onClick={() => setVista('lista')}>
-              📋 Lista
+              Lista
             </button>
           </div>
           {vista === 'cuadro' ? (
@@ -934,7 +977,7 @@ export default function App() {
       {tab === 'amigos' && <Amigos bracket={bracket} />}
 
       <footer className="footer">
-        Goles, resultados y llaves se actualizan solos desde el marcador oficial 🛰️ · aquí nadie
+        Goles, resultados y llaves se actualizan solos desde el marcador oficial · aquí nadie
         captura nada
       </footer>
     </div>

@@ -2,23 +2,24 @@
 
 export const POZO = 1600 // 8 amigos × $200
 
+// code = código ISO que usa flag-icons para la bandera rectangular
 export const TEAMS = {
-  par: { name: 'Paraguay', flag: '🇵🇾' },
-  fra: { name: 'Francia', flag: '🇫🇷' },
-  can: { name: 'Canadá', flag: '🇨🇦' },
-  mar: { name: 'Marruecos', flag: '🇲🇦' },
-  por: { name: 'Portugal', flag: '🇵🇹' },
-  esp: { name: 'España', flag: '🇪🇸' },
-  usa: { name: 'EEUU', flag: '🇺🇸' },
-  bel: { name: 'Bélgica', flag: '🇧🇪' },
-  bra: { name: 'Brasil', flag: '🇧🇷' },
-  nor: { name: 'Noruega', flag: '🇳🇴' },
-  mex: { name: 'México', flag: '🇲🇽' },
-  eng: { name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  arg: { name: 'Argentina', flag: '🇦🇷' },
-  egy: { name: 'Egipto', flag: '🇪🇬' },
-  sui: { name: 'Suiza', flag: '🇨🇭' },
-  col: { name: 'Colombia', flag: '🇨🇴' },
+  par: { name: 'Paraguay', code: 'py' },
+  fra: { name: 'Francia', code: 'fr' },
+  can: { name: 'Canadá', code: 'ca' },
+  mar: { name: 'Marruecos', code: 'ma' },
+  por: { name: 'Portugal', code: 'pt' },
+  esp: { name: 'España', code: 'es' },
+  usa: { name: 'EEUU', code: 'us' },
+  bel: { name: 'Bélgica', code: 'be' },
+  bra: { name: 'Brasil', code: 'br' },
+  nor: { name: 'Noruega', code: 'no' },
+  mex: { name: 'México', code: 'mx' },
+  eng: { name: 'Inglaterra', code: 'gb-eng' },
+  arg: { name: 'Argentina', code: 'ar' },
+  egy: { name: 'Egipto', code: 'eg' },
+  sui: { name: 'Suiza', code: 'ch' },
+  col: { name: 'Colombia', code: 'co' },
 }
 
 // Cada amigo puso $200 y le tocaron 2 equipos en la tómbola
