@@ -1857,8 +1857,22 @@ body {
   animation: sf-pulse 1.2s ease-in-out infinite;
 }
 
+/* Terminado ≠ apagado: mismo borde que las demás para no leerse como
+   "deshabilitado"; el K.O. y el retrato golpeado ya cuentan la historia */
 .sf-card.decided {
-  border-color: #26265c;
+  border-color: var(--sf-line);
+}
+
+/* Con partido decidido, el velo del stage se cierra un poco más para que
+   ganador y perdedor sigan leyéndose con claridad encima */
+.sf-card.decided.con-stage::before {
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sf-panel) 84%, transparent) 0%,
+      color-mix(in srgb, var(--sf-panel2) 93%, transparent) 100%
+    ),
+    var(--stage-img);
 }
 
 .sf-status {
@@ -1881,12 +1895,20 @@ body {
   padding: 7px 8px;
 }
 
+/* El perdedor NO se desvanece (se perdía contra el stage): franja oscura
+   propia y nombre tachado; el retrato golpeado en gris cuenta el resto */
 .sf-fighter.loser {
-  opacity: 0.65;
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.sf-fighter.loser .sf-fname {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--sf-red) 75%, transparent);
+  text-decoration-thickness: 2px;
 }
 
 .sf-fighter.winner {
-  background: color-mix(in srgb, var(--sf-gold) 9%, transparent);
+  background: color-mix(in srgb, var(--sf-gold) 14%, transparent);
 }
 
 /* Retrato: mugshot de la pantalla VS, o el golpeado del continue si perdió */
@@ -1945,6 +1967,8 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Contorno oscuro: los nombres van montados sobre el stage */
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.85);
 }
 
 .sf-fighter.pending .sf-fname {
@@ -1954,6 +1978,7 @@ body {
 .sf-fchar {
   font-size: 0.36rem;
   color: var(--sf-dim);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.85);
 }
 
 /* Barra de vida clásica: dorado sobre rojo, baja con los goles del rival */
@@ -1974,6 +1999,7 @@ body {
 .sf-score {
   font-size: 0.62rem;
   color: var(--sf-text);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.85);
 }
 
 .sf-tag {
@@ -2321,7 +2347,9 @@ body {
   left: -30px;
   width: 26px;
   height: 24px;
-  transform: translateY(-50%);
+  /* El sprite original mira a la izquierda; se espejea para que vuele
+     de frente hacia donde avanza (izquierda → derecha) */
+  transform: translateY(-50%) scaleX(-1);
   background: url('/sf/plane.png') center / contain no-repeat;
   image-rendering: pixelated;
   animation: sf-fly 3.6s linear infinite;
