@@ -562,27 +562,38 @@ body {
 }
 
 /* ── Cuadro (bracket gráfico) ── */
+/* Segmented control de ancho completo: distinto a los tabs (track hundido,
+   segmento activo elevado) para que no compita con la navegación principal */
 .vista-toggle {
   display: flex;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  background: color-mix(in srgb, var(--muted) 13%, transparent);
+  border-radius: 12px;
 }
 
 .vista-toggle button {
-  border: 1px solid var(--border);
-  background: var(--card);
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: none;
+  background: transparent;
   color: var(--muted);
   font-weight: 700;
-  font-size: 0.78rem;
-  padding: 6px 14px;
-  border-radius: 999px;
+  font-size: 0.85rem;
+  padding: 9px;
+  border-radius: 9px;
   cursor: pointer;
+  transition: color 0.15s;
 }
 
 .vista-toggle button.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
 }
 
 .cuadro-scroll {

@@ -166,6 +166,23 @@ function IconLuna() {
   )
 }
 
+// Iconos del switch de vista de El Camino
+function IconBracket() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 7h4M4 17h4M8 7v10M8 12h9" />
+    </svg>
+  )
+}
+
+function IconLista() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M8 6h12M8 12h12M8 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+    </svg>
+  )
+}
+
 // Bandera seria cuadrada (SVG oficial de flag-icons)
 function Bandera({ teamId, className = '' }) {
   const team = TEAMS[teamId]
@@ -1056,10 +1073,10 @@ export default function App() {
               className={vista === 'cuadro' ? 'active' : ''}
               onClick={() => setVista('cuadro')}
             >
-              Cuadro
+              <IconBracket /> Bracket
             </button>
             <button className={vista === 'lista' ? 'active' : ''} onClick={() => setVista('lista')}>
-              Lista
+              <IconLista /> Lista
             </button>
           </div>
           {vista === 'cuadro' ? (
