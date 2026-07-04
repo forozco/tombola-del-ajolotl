@@ -116,6 +116,25 @@ function fechaCorta(dateStr) {
   })
 }
 
+// La jornada que se muestra en "Hoy". Regla: una jornada "se activa" 2h antes
+// de su primer partido, y la activa es la más reciente que ya entró. Así los
+// partidos de un día siguen visibles toda esa jornada y hasta ~2h antes del
+// primer partido del siguiente día (no desaparecen de golpe a medianoche).
+// Funciona en cualquier zona horaria: cada día se agrupa por la hora local del
+// dispositivo y el margen se compara contra timestamps absolutos (UTC).
+const ROLLOVER_MS = 2 * 3_600_000
+function jornadaHoy(matches, ahora) {
+  const dias = [...new Set(matches.map((m) => m.date))].sort()
+  const inicioDe = (d) =>
+    Math.min(...matches.filter((m) => m.date === d).map((m) => new Date(m.utc).getTime()))
+  let activa = dias[0]
+  for (const d of dias) {
+    if (inicioDe(d) - ahora <= ROLLOVER_MS) activa = d
+    else break
+  }
+  return activa
+}
+
 // Abreviatura de la zona horaria del dispositivo (p. ej. "GMT-6"), para
 // dejar claro que los horarios se muestran en la hora local de cada quien
 function zonaHoraria() {
@@ -506,23 +525,28 @@ function LiveTicker({ bracket, onVer }) {
 
 // Tab "Hoy": partidos del día, los que vienen y los últimos resultados
 function Hoy({ bracket, goToLlaves, onPick }) {
-  const hoy = todayStr()
   // Renglón expandido: tocar un partido de las listas abre su detalle completo
   const [abierto, setAbierto] = useState(null)
   const porFecha = [...bracket.resolved].sort((a, b) =>
     `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)
   )
-  // Hoy: orden cronológico estable — los partidos nunca cambian de lugar;
-  // los que están en vivo se tienen presentes con el ticker fijo de arriba
-  const deHoy = porFecha.filter((m) => m.date === hoy)
-  const proximos = porFecha.filter((m) => m.date > hoy && !m.winner)
-  const jugados = porFecha.filter((m) => m.winner && m.date <= hoy).reverse()
+  // Jornada activa: se queda en el día jugado hasta ~2h antes del siguiente
+  const jornada = jornadaHoy(porFecha, AHORA())
+  const esHoyReal = jornada === todayStr()
+  // Orden cronológico estable — los partidos nunca cambian de lugar; los que
+  // están en vivo se tienen presentes con el ticker fijo de arriba
+  const deHoy = porFecha.filter((m) => m.date === jornada)
+  const proximos = porFecha.filter((m) => m.date > jornada && !m.winner)
+  const jugados = porFecha.filter((m) => m.winner && m.date < jornada).reverse()
   const siguienteFecha = proximos[0]?.date
+  const tituloJornada = fechaLarga(jornada)
 
   return (
     <div className="hoy">
       <Countdown matches={porFecha} />
-      <h2 className="round-title">Hoy · {fechaLarga(hoy)}</h2>
+      <h2 className="round-title">
+        {esHoyReal ? `Hoy · ${tituloJornada}` : tituloJornada}
+      </h2>
       {deHoy.length > 0 ? (
         <div className="round-matches">
           {deHoy.map((m) => (
@@ -1020,8 +1044,11 @@ export default function App() {
       {tab === 'amigos' && <Amigos bracket={bracket} />}
 
       <footer className="footer">
-        Goles, resultados y llaves se actualizan solos desde el marcador oficial · aquí nadie
-        captura nada
+        <p>
+          Goles, marcadores y resultados llegan en tiempo real desde el marcador oficial de{' '}
+          <strong>ESPN</strong>. Durante un partido se actualiza cada pocos segundos y el ganador
+          avanza solo en las llaves — aquí nadie captura nada a mano.
+        </p>
         <span className="footer-tz">Horarios en tu hora local ({zonaHoraria()})</span>
       </footer>
     </div>

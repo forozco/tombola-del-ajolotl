@@ -953,14 +953,22 @@ body {
 .footer {
   text-align: center;
   font-size: 0.75rem;
+  line-height: 1.5;
   color: var(--muted);
   margin-top: 8px;
-  padding: 12px;
+  padding: 14px 12px;
+  max-width: 380px;
+  margin-inline: auto;
+}
+
+.footer strong {
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .footer-tz {
   display: block;
-  margin-top: 6px;
+  margin-top: 8px;
   font-weight: 600;
   opacity: 0.75;
 }
