@@ -3,9 +3,15 @@ import { TEAMS, OWNERS, OWNER_BY_TEAM, MATCHES, ROUNDS, POZO } from './data.js'
 import { hasSupabase, fetchResults, subscribeResults, saveResult, deleteResult } from './sync.js'
 import { fetchLive, pairKey } from './live.js'
 
+import { simLive } from './simulacion.js'
+
 // Puerta de emergencia: con ?admin en la URL se puede corregir un resultado
 // a mano (por si la API fallara). En uso normal la app es solo de consulta.
 const ES_ADMIN = new URLSearchParams(window.location.search).has('admin')
+
+// Modo demo: con ?simular la app recorre un torneo ficticio en ~3 minutos,
+// sin tocar Supabase ni el localStorage real.
+const ES_SIM = new URLSearchParams(window.location.search).has('simular')
 
 const STORAGE_KEY = 'tombola-ajolotl-v1'
 const THEME_KEY = 'tombola-ajolotl-theme'
@@ -544,15 +550,16 @@ function FriendCard({ owner }) {
 
 // Estado de resultados: en vivo vía Supabase si hay credenciales, si no, local
 function useResults() {
-  const [results, setResults] = useState(loadResults)
+  const [results, setResults] = useState(ES_SIM ? {} : loadResults)
   const [online, setOnline] = useState(false)
 
   useEffect(() => {
+    if (ES_SIM) return
     localStorage.setItem(STORAGE_KEY, JSON.stringify(results))
   }, [results])
 
   useEffect(() => {
-    if (!hasSupabase) return
+    if (!hasSupabase || ES_SIM) return
     let active = true
     fetchResults()
       .then((remote) => {
@@ -578,7 +585,7 @@ function useResults() {
   // Registro automático desde el marcador en vivo: ganador + marcador final
   const applyLive = (matchId, teamId, marcador) => {
     setResults((prev) => (prev[matchId] === teamId ? prev : { ...prev, [matchId]: teamId }))
-    if (hasSupabase) {
+    if (hasSupabase && !ES_SIM) {
       saveResult(matchId, teamId, marcador).then(
         ({ error }) => error && console.error('Error al sincronizar:', error.message)
       )
@@ -592,7 +599,7 @@ function useResults() {
       const next = { ...prev }
       if (undo) delete next[matchId]
       else next[matchId] = teamId
-      if (hasSupabase) {
+      if (hasSupabase && !ES_SIM) {
         const op = undo ? deleteResult(matchId) : saveResult(matchId, teamId)
         op.then(({ error }) => error && console.error('Error al sincronizar:', error.message))
       }
@@ -643,7 +650,7 @@ function useLive() {
     const poll = async () => {
       clearTimeout(timer)
       try {
-        const data = await fetchLive()
+        const data = ES_SIM ? simLive() : await fetchLive()
         if (!active) return
         // Detecta goles nuevos comparando contra el sondeo anterior
         for (const [pair, ev] of Object.entries(data)) {
@@ -655,7 +662,7 @@ function useLive() {
         }
         prevRef.current = data
         setLive(data)
-        timer = setTimeout(poll, pollDelay(data))
+        timer = setTimeout(poll, ES_SIM ? 1_000 : pollDelay(data))
       } catch {
         if (active) timer = setTimeout(poll, 30_000)
       }
@@ -735,6 +742,7 @@ export default function App() {
             {online ? '🟢 En vivo' : '⚪ Local'}
           </span>
           {ES_ADMIN && <span className="sync-pill admin-pill">🔧 admin</span>}
+          {ES_SIM && <span className="sync-pill admin-pill">🎬 demo</span>}
         </p>
       </header>
 
