@@ -169,6 +169,20 @@ body {
   color: var(--muted);
 }
 
+.sync-pill.en-vivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--live);
+  border-color: color-mix(in srgb, var(--live) 40%, transparent);
+  background: color-mix(in srgb, var(--live) 8%, var(--card));
+}
+
+.sync-pill.en-vivo .live-dot {
+  width: 7px;
+  height: 7px;
+}
+
 .sync-pill.online {
   color: var(--win);
   border-color: color-mix(in srgb, var(--win) 40%, transparent);

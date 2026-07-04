@@ -1191,7 +1191,7 @@ function detalleDe(m) {
 }
 
 export default function App() {
-  const { results, detalles, applyLive, pick, online, refetch } = useResults()
+  const { results, detalles, applyLive, pick, refetch } = useResults()
   const { live, refetch: refetchLive } = useLive()
 
   // Refresh suave del pull-to-refresh: re-consulta datos SIN recargar la página
@@ -1250,6 +1250,8 @@ export default function App() {
     [results, live, detalles]
   )
   const champOwner = bracket.champion ? OWNER_BY_TEAM[bracket.champion] : null
+  // Cuántos partidos se están jugando ahora mismo
+  const enVivoCount = bracket.resolved.filter((m) => m.live?.state === 'in').length
 
   // Cuando un partido termina según ESPN, registra ganador, marcador y el
   // detalle con los goles (una sola vez, al detectar el final o si aún no
@@ -1293,10 +1295,12 @@ export default function App() {
         </div>
         <p className="tagline">
           Mundial 2026 · Quiniela de los Coonstl
-          <span className={`sync-pill${online ? ' online' : ''}`}>
-            <span className="estado-dot" />
-            {online ? 'En vivo' : 'Local'}
-          </span>
+          {enVivoCount > 0 && (
+            <span className="sync-pill en-vivo">
+              <span className="live-dot" />
+              {enVivoCount === 1 ? 'En vivo' : `${enVivoCount} en vivo`}
+            </span>
+          )}
           {ES_ADMIN && <span className="sync-pill admin-pill">admin</span>}
           {ES_SIM && <span className="sync-pill admin-pill">demo</span>}
         </p>
