@@ -1029,7 +1029,7 @@ export default function App() {
           Hoy
         </button>
         <button className={tab === 'llaves' ? 'active' : ''} onClick={() => setTab('llaves')}>
-          Llaves
+          El Camino
         </button>
         <button className={tab === 'amigos' ? 'active' : ''} onClick={() => setTab('amigos')}>
           Coonstl
@@ -1075,7 +1075,7 @@ export default function App() {
         <p>
           Goles, marcadores y resultados llegan en tiempo real desde el marcador oficial de{' '}
           <strong>ESPN</strong>. Durante un partido se actualiza cada pocos segundos y el ganador
-          avanza solo en las llaves — aquí nadie captura nada a mano.
+          avanza solo de ronda — aquí nadie captura nada a mano.
         </p>
         <span className="footer-tz">Horarios en tu hora local ({zonaHoraria()})</span>
       </footer>
