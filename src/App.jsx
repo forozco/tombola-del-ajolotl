@@ -146,7 +146,9 @@ function TeamRow({ teamId, match, champion, onPick }) {
       <span className="team-name">{team.name}</span>
       <OwnerChip owner={owner} small />
       {score != null && <span className="score">{score}</span>}
-      {isWinner && <span className="check">{champion === teamId ? '🏆' : '✓'}</span>}
+      {match.winner && (
+        <span className="check">{isWinner ? (champion === teamId ? '🏆' : '✓') : ''}</span>
+      )}
     </div>
   )
 }
