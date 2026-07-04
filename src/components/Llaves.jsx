@@ -17,27 +17,67 @@ import { IconBracket, IconLista } from './Icons.jsx'
 
 // ── Vista lista: reutiliza MatchCard grande, apilado por ronda ─────────────
 
+// Cada ronda se lee por capas de relevancia (mismo criterio que la pestaña
+// Hoy): primero lo que tiene datos (en vivo → próximos, cronológico), luego
+// los cruces sin definir y al final los terminados. Cada grupo va en su
+// propio grid, así las filas emparejan tarjetas de altura similar y la card
+// en vivo no convive con placeholders vacíos.
+
+const grupoDe = (m) => {
+  if (m.winner || m.live?.state === 'post') return 'terminados'
+  if (!m.homeTeam && !m.awayTeam) return 'vacios'
+  return 'activos'
+}
+
+const enVivoPrimero = (m) => (m.live?.state === 'in' ? 0 : 1)
+const cronologico = (a, b) =>
+  `${a.date}${a.time ?? ''}`.localeCompare(`${b.date}${b.time ?? ''}`)
+
+function gruposDeRonda(matches) {
+  const de = (id) => matches.filter((m) => grupoDe(m) === id)
+  return [
+    {
+      id: 'activos',
+      titulo: null,
+      matches: de('activos').sort((a, b) => enVivoPrimero(a) - enVivoPrimero(b) || cronologico(a, b)),
+    },
+    { id: 'vacios', titulo: 'Por definir', matches: de('vacios') },
+    { id: 'terminados', titulo: 'Terminados', matches: de('terminados') },
+  ].filter((g) => g.matches.length > 0)
+}
+
 function Bracket({ bracket, onPick }) {
   return (
     <div className="bracket">
-      {ROUNDS.map((label, round) => (
-        <section key={label} className="round">
-          <h2 className="round-title">{label}</h2>
-          <div className="round-matches">
-            {bracket.resolved
-              .filter((m) => m.round === round)
-              .map((m) => (
-                <MatchCard
-                  key={m.id}
-                  match={m}
-                  champion={bracket.champion}
-                  bracket={bracket}
-                  onPick={onPick}
-                />
-              ))}
-          </div>
-        </section>
-      ))}
+      {ROUNDS.map((label, round) => {
+        const grupos = gruposDeRonda(bracket.resolved.filter((m) => m.round === round))
+        return (
+          <section key={label} className="round">
+            <h2 className="round-title">{label}</h2>
+            {grupos.map((g) => (
+              <div key={g.id} className="round-group">
+                {/* El mini-título solo aparece si la ronda mezcla estados;
+                    una ronda homogénea (p. ej. toda por definir) no lo
+                    necesita y sería ruido. */}
+                {grupos.length > 1 && g.titulo && (
+                  <h3 className="round-subtitle">{g.titulo}</h3>
+                )}
+                <div className="round-matches">
+                  {g.matches.map((m) => (
+                    <MatchCard
+                      key={m.id}
+                      match={m}
+                      champion={bracket.champion}
+                      bracket={bracket}
+                      onPick={onPick}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </section>
+        )
+      })}
     </div>
   )
 }

@@ -434,6 +434,22 @@ button,
   gap: 10px;
 }
 
+/* Sub-bloques de una ronda en la vista Lista: el grupo con actividad va
+   primero sin etiqueta; "Por definir" y "Terminados" se separan con su
+   mini-título para que la ronda se lea por capas de relevancia. */
+.round-group + .round-group {
+  margin-top: 18px;
+}
+
+.round-subtitle {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin: 0 0 8px;
+  font-weight: 800;
+}
+
 .match-card {
   background: var(--card);
   border: 1px solid var(--border);
