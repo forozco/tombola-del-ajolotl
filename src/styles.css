@@ -1,0 +1,757 @@
+/* ── Tómbola del Ajolotl ── mobile-first, tema claro/oscuro ── */
+
+:root {
+  --accent: #e83e8c; /* rosa ajolote */
+  --bg: #faf7fb;
+  --card: #ffffff;
+  --text: #231529;
+  --muted: #7a6b80;
+  --border: #eadfee;
+  --win-bg: #f0fdf4;
+  --win-border: #86efac;
+  --shadow: 0 1px 3px rgba(35, 21, 41, 0.08);
+}
+
+:root[data-theme='dark'] {
+  --bg: #16101c;
+  --card: #221729;
+  --text: #f5eef8;
+  --muted: #a893b3;
+  --border: #372a40;
+  --win-bg: #142a1c;
+  --win-border: #1e7a3c;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.25s, color 0.25s;
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+}
+
+/* ── Header ── */
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.title-emoji {
+  filter: hue-rotate(0deg);
+}
+
+.theme-btn {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.subtitle strong {
+  color: var(--accent);
+}
+
+.sync-pill {
+  margin-left: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+}
+
+.sync-pill.online {
+  color: #16a34a;
+  border-color: color-mix(in srgb, #16a34a 40%, transparent);
+}
+
+/* ── Campeón ── */
+.champion-banner {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--owner), var(--accent));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(232, 62, 140, 0.35);
+  animation: pop 0.4s ease;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.champion-trophy {
+  font-size: 2rem;
+}
+
+.champion-team {
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.champion-owner {
+  font-size: 0.85rem;
+  opacity: 0.95;
+  margin-top: 2px;
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px;
+  position: sticky;
+  top: 8px;
+  z-index: 10;
+  box-shadow: var(--shadow);
+}
+
+.tabs button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tabs button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ── Bracket ── */
+.round {
+  margin-bottom: 22px;
+}
+
+.round-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 10px;
+  font-weight: 800;
+}
+
+.round-matches {
+  display: grid;
+  gap: 10px;
+}
+
+.match-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.duel-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 7px 12px 0;
+}
+
+.team-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  color: var(--text);
+  font-size: 0.95rem;
+  text-align: left;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.team-row + .team-row {
+  border-top: 1px solid var(--border);
+}
+
+.team-row.pending {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.team-row.winner {
+  background: var(--win-bg);
+  font-weight: 700;
+}
+
+.team-row.loser {
+  opacity: 0.45;
+}
+
+.team-row.loser .team-name {
+  text-decoration: line-through;
+}
+
+.flag {
+  font-size: 1.3rem;
+  width: 28px;
+  text-align: center;
+}
+
+.team-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.check {
+  color: #16a34a;
+  font-weight: 800;
+}
+
+/* ── Tab Hoy ── */
+.match-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 0;
+}
+
+.round-chip {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.match-time {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.today-empty {
+  background: var(--card);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.today-empty-emoji {
+  font-size: 2rem;
+  margin-bottom: 6px;
+}
+
+.today-empty-next {
+  margin-top: 6px;
+}
+
+.today-empty-next strong {
+  color: var(--accent);
+}
+
+.next-title {
+  margin-top: 22px;
+}
+
+.mini-list {
+  display: grid;
+  gap: 8px;
+}
+
+.mini-match {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 0.88rem;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.mini-when {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--muted);
+}
+
+.mini-teams {
+  font-weight: 600;
+}
+
+.mini-vs {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.mini-duel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mini-winner {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+/* ── Cuadro (bracket gráfico) ── */
+.vista-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.vista-toggle button {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.vista-toggle button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.cuadro-scroll {
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 0 16px 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.cuadro-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.cuadro-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cuadro-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+.cuadro {
+  display: flex;
+  gap: 28px;
+  min-width: max-content;
+}
+
+.cuadro-col {
+  display: flex;
+  flex-direction: column;
+  width: 190px;
+}
+
+.cuadro-col-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-weight: 800;
+  padding-bottom: 8px;
+  text-align: center;
+}
+
+.cuadro-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cpair {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  position: relative;
+}
+
+/* Línea vertical que une a la pareja rumbo al siguiente cruce */
+.cpair::before {
+  content: '';
+  position: absolute;
+  right: -14px;
+  top: 25%;
+  height: 50%;
+  border-right: 2px solid var(--border);
+}
+
+/* Tramo horizontal hacia la tarjeta de la siguiente ronda */
+.cpair::after {
+  content: '';
+  position: absolute;
+  right: -28px;
+  top: 50%;
+  width: 14px;
+  border-top: 2px solid var(--border);
+}
+
+.cslot {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 4px 0;
+}
+
+/* Tramo que sale de cada tarjeta hacia la línea vertical */
+.cslot::after {
+  content: '';
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  width: 14px;
+  border-top: 2px solid var(--border);
+}
+
+.cpair.solo::before,
+.cpair.solo::after,
+.cuadro-col:last-child .cslot::after {
+  display: none;
+}
+
+.ccard {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.ccard.playing {
+  border-color: color-mix(in srgb, #dc2626 45%, var(--border));
+}
+
+.ccard-status {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 6px 9px 0;
+  text-transform: capitalize;
+}
+
+.ccard.playing .ccard-status {
+  color: #dc2626;
+}
+
+.cteam {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  font-size: 0.8rem;
+}
+
+.cteam + .cteam {
+  border-top: 1px solid var(--border);
+}
+
+.cteam.pending {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.cteam.winner {
+  background: var(--win-bg);
+  font-weight: 800;
+}
+
+.cteam.loser {
+  opacity: 0.5;
+}
+
+.cteam.loser .cteam-name {
+  text-decoration: line-through;
+}
+
+.cteam-flag {
+  font-size: 1rem;
+}
+
+.cteam-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cteam-mid {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cteam-owner {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cteam-score {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.cteam-check {
+  color: #16a34a;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+/* ── Marcador en vivo ── */
+.match-card.playing {
+  border-color: color-mix(in srgb, #dc2626 45%, var(--border));
+}
+
+.live-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #dc2626;
+  padding: 8px 12px 0;
+}
+
+.live-bar.done {
+  color: var(--muted);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dc2626;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+.score {
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  min-width: 20px;
+  text-align: center;
+}
+
+.shootout {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.mini-score {
+  font-weight: 800;
+  padding: 0 4px;
+}
+
+/* ── Owner chips ── */
+.owner-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--owner);
+  background: color-mix(in srgb, var(--owner) 12%, transparent);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.owner-chip.small {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+}
+
+.owner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--owner);
+}
+
+/* ── Amigos ── */
+.amigos-summary {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.summary-pill {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.alive-pill {
+  color: #16a34a;
+}
+
+.out-pill {
+  color: var(--muted);
+}
+
+.out-title {
+  margin-top: 22px;
+  color: var(--muted);
+}
+
+.friend-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--owner);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+}
+
+.friend-card.dead {
+  opacity: 0.55;
+}
+
+.friend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.friend-count {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.friend-teams {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.friend-team {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #16a34a 10%, transparent);
+  color: #16a34a;
+}
+
+.friend-team.out {
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.friend-team.champ {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #422006;
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 8px;
+  padding: 12px;
+}
