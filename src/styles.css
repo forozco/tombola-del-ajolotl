@@ -1120,10 +1120,11 @@ body {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 12px 12px 16px;
-  background: var(--text);
-  color: var(--bg);
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
   font-size: 0.85rem;
   font-weight: 600;
   animation: toast-in 0.3s ease;
@@ -1158,8 +1159,7 @@ body {
 
 .update-later {
   background: transparent;
-  color: var(--bg);
-  opacity: 0.7;
+  color: var(--muted);
 }
 
 .update-now {

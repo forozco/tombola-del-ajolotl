@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TEAMS, OWNERS, OWNER_BY_TEAM, MATCHES, ROUNDS, POZO } from './data.js'
 import { hasSupabase, fetchResults, subscribeResults, saveResult, deleteResult } from './sync.js'
 import { fetchLive, pairKey } from './live.js'
@@ -33,22 +33,25 @@ function ActualizacionDisponible() {
 // Jalar desde arriba para actualizar (pull-to-refresh). En la PWA de iOS no
 // existe el gesto nativo; este lo reemplaza: al estar hasta arriba y jalar
 // hacia abajo, recarga la app (trae datos frescos y detecta versión nueva).
-function PullToRefresh() {
+function PullToRefresh({ onRefresh }) {
   const [dist, setDist] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const startY = useRef(null)
   const distRef = useRef(0)
+  const refreshingRef = useRef(false)
   const UMBRAL = 66
   const MAX = 88
 
   useEffect(() => {
     const onStart = (e) => {
       startY.current =
-        window.scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null
+        window.scrollY <= 0 && e.touches.length === 1 && !refreshingRef.current
+          ? e.touches[0].clientY
+          : null
     }
     const onMove = (e) => {
-      if (startY.current == null || refreshing) return
+      if (startY.current == null) return
       const dy = e.touches[0].clientY - startY.current
       if (dy <= 0 || window.scrollY > 0) {
         startY.current = null
@@ -70,9 +73,17 @@ function PullToRefresh() {
       startY.current = null
       setDragging(false)
       if (distRef.current >= UMBRAL) {
+        // Refresh suave: re-consulta datos sin recargar la página (no parpadea)
+        refreshingRef.current = true
         setRefreshing(true)
         setDist(UMBRAL)
-        setTimeout(() => window.location.reload(), 550)
+        const minimo = new Promise((r) => setTimeout(r, 700))
+        Promise.all([Promise.resolve(onRefresh?.()), minimo]).finally(() => {
+          refreshingRef.current = false
+          setRefreshing(false)
+          distRef.current = 0
+          setDist(0)
+        })
       } else {
         distRef.current = 0
         setDist(0)
@@ -88,7 +99,7 @@ function PullToRefresh() {
       document.removeEventListener('touchend', onEnd)
       document.removeEventListener('touchcancel', onEnd)
     }
-  }, [refreshing])
+  }, [onRefresh])
 
   const alto = refreshing ? UMBRAL : dist
   const listo = dist >= UMBRAL
@@ -997,17 +1008,22 @@ function useResults() {
     localStorage.setItem(DETALLES_KEY, JSON.stringify(detalles))
   }, [detalles])
 
-  useEffect(() => {
-    if (!hasSupabase || ES_SIM) return
-    let active = true
-    fetchResults()
+  // Re-consulta los resultados desde Supabase (usado por el pull-to-refresh)
+  const refetch = useCallback(() => {
+    if (!hasSupabase || ES_SIM) return Promise.resolve()
+    return fetchResults()
       .then(({ results: remote, detalles: remoteDet }) => {
-        if (!active) return
         setResults(remote)
         setDetalles(remoteDet)
         setOnline(true)
       })
       .catch(() => setOnline(false))
+  }, [])
+
+  useEffect(() => {
+    if (!hasSupabase || ES_SIM) return
+    let active = true
+    refetch()
     const unsubscribe = subscribeResults((payload) => {
       const row = payload.new ?? {}
       const oldId = payload.old?.match_id
@@ -1059,7 +1075,7 @@ function useResults() {
     })
   }
 
-  return { results, detalles, applyLive, pick, online }
+  return { results, detalles, applyLive, pick, online, refetch }
 }
 
 // Cadencia del sondeo según el momento: pegado al partido, casi en vivo
@@ -1096,6 +1112,7 @@ function avisoDeGol(teamId, ev) {
 function useLive() {
   const [live, setLive] = useState({})
   const prevRef = useRef({})
+  const pollRef = useRef(null)
   useEffect(() => {
     let timer
     let active = true
@@ -1119,6 +1136,7 @@ function useLive() {
         if (active) timer = setTimeout(poll, 30_000)
       }
     }
+    pollRef.current = poll
     // Al desbloquear el teléfono o volver a la pestaña, consulta de inmediato
     const onVisible = () => {
       if (document.visibilityState === 'visible') poll()
@@ -1133,7 +1151,8 @@ function useLive() {
       window.removeEventListener('focus', onVisible)
     }
   }, [])
-  return live
+  const refetch = useCallback(() => Promise.resolve(pollRef.current?.()), [])
+  return { live, refetch }
 }
 
 // Texto del registro permanente: "2-1", "1-1 (pen 4-2)", "2-1 (t. extra)"
@@ -1166,8 +1185,20 @@ function detalleDe(m) {
 }
 
 export default function App() {
-  const { results, detalles, applyLive, pick, online } = useResults()
-  const live = useLive()
+  const { results, detalles, applyLive, pick, online, refetch } = useResults()
+  const { live, refetch: refetchLive } = useLive()
+
+  // Refresh suave del pull-to-refresh: re-consulta datos SIN recargar la página
+  // (nada de parpadeo) y de paso revisa si hay una versión nueva de la app
+  const onRefresh = useCallback(async () => {
+    await Promise.all([refetch(), refetchLive()])
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration()
+      await reg?.update()
+    } catch {
+      // sin service worker o sin permiso: no pasa nada
+    }
+  }, [refetch, refetchLive])
   const [themeMode, setThemeMode] = useState(loadThemeMode)
   const [sysDark, setSysDark] = useState(systemPrefersDark)
   const [tab, setTab] = useState('hoy')
@@ -1231,7 +1262,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <PullToRefresh />
+      <PullToRefresh onRefresh={onRefresh} />
       <ActualizacionDisponible />
       <header className="header">
         <div className="header-top">
