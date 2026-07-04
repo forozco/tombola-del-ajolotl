@@ -220,7 +220,8 @@ body {
   transition: background 0.15s, opacity 0.15s;
 }
 
-.team-row + .team-row {
+.team-row + .team-row,
+.goles + .team-row {
   border-top: 1px solid var(--border);
 }
 
@@ -363,13 +364,13 @@ body {
 .goles {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 8px 12px 10px;
-  border-top: 1px dashed var(--border);
+  gap: 2px;
+  padding: 0 12px 9px 50px;
+  background: color-mix(in srgb, var(--muted) 4%, transparent);
 }
 
 .gol {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--muted);
 }
@@ -667,11 +668,6 @@ body {
   font-variant-numeric: tabular-nums;
   min-width: 20px;
   text-align: center;
-}
-
-.shootout {
-  font-size: 0.78rem;
-  color: var(--muted);
 }
 
 .mini-score {

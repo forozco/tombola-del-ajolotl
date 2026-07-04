@@ -126,7 +126,6 @@ function TeamRow({ teamId, match, champion, onPick }) {
   const isLoser = match.winner && match.winner !== teamId
   const ev = match.live
   const score = ev && ev.state !== 'pre' ? ev.score?.[teamId] : null
-  const shootout = ev?.shootout?.[teamId]
   const admin = ES_ADMIN && onPick && match.homeTeam && match.awayTeam
 
   if (!team) {
@@ -145,12 +144,7 @@ function TeamRow({ teamId, match, champion, onPick }) {
       <span className="flag">{team.flag}</span>
       <span className="team-name">{team.name}</span>
       <OwnerChip owner={owner} small />
-      {score != null && (
-        <span className="score">
-          {score}
-          {shootout != null && <span className="shootout"> ({shootout})</span>}
-        </span>
-      )}
+      {score != null && <span className="score">{score}</span>}
       {isWinner && <span className="check">{champion === teamId ? '🏆' : '✓'}</span>}
     </div>
   )
@@ -162,7 +156,12 @@ function finishLabel(match) {
   if (!ev || ev.state !== 'post') return null
   if (ev.finish === 'pens') {
     const sh = ev.shootout
-    return `Final · penales ${sh?.[match.homeTeam] ?? '?'}-${sh?.[match.awayTeam] ?? '?'}`
+    const ganador = match.winner ? TEAMS[match.winner] : null
+    const marcadorPens =
+      match.winner === match.homeTeam
+        ? `${sh?.[match.homeTeam] ?? '?'}-${sh?.[match.awayTeam] ?? '?'}`
+        : `${sh?.[match.awayTeam] ?? '?'}-${sh?.[match.homeTeam] ?? '?'}`
+    return `Final · penales ${marcadorPens}${ganador ? ` para ${ganador.flag} ${ganador.name}` : ''}`
   }
   if (ev.finish === 'aet') return 'Final · en tiempo extra'
   return 'Final · en los 90 minutos'
@@ -202,19 +201,26 @@ function MatchCard({ match, champion, meta, onPick }) {
         </div>
       )}
       <TeamRow teamId={match.homeTeam} match={match} champion={champion} onPick={onPick} />
+      {meta && <GolesDe match={match} teamId={match.homeTeam} />}
       <TeamRow teamId={match.awayTeam} match={match} champion={champion} onPick={onPick} />
-      {meta && match.live?.goals?.length > 0 && (
-        <div className="goles">
-          {match.live.goals.map((g, i) => (
-            <span key={i} className="gol">
-              ⚽ {g.minute} {g.player}
-              {g.penalty ? ' (penal)' : ''}
-              {g.ownGoal ? ' (autogol)' : ''}
-              {g.teamId ? ` · ${TEAMS[g.teamId].flag}` : ''}
-            </span>
-          ))}
-        </div>
-      )}
+      {meta && <GolesDe match={match} teamId={match.awayTeam} />}
+    </div>
+  )
+}
+
+// Goles de un equipo, listados justo debajo de su renglón
+function GolesDe({ match, teamId }) {
+  const goles = match.live?.goals?.filter((g) => g.teamId === teamId) ?? []
+  if (!goles.length) return null
+  return (
+    <div className="goles">
+      {goles.map((g, i) => (
+        <span key={i} className="gol">
+          ⚽ {g.minute} {g.player}
+          {g.penalty ? ' (penal)' : ''}
+          {g.ownGoal ? ' (autogol)' : ''}
+        </span>
+      ))}
     </div>
   )
 }
@@ -326,7 +332,11 @@ function Hoy({ bracket, goToLlaves, onPick }) {
   const porFecha = [...bracket.resolved].sort((a, b) =>
     `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)
   )
-  const deHoy = porFecha.filter((m) => m.date === hoy)
+  // Hoy: primero los EN VIVO, luego los que vienen, al final los terminados
+  const prioridad = (m) => (m.live?.state === 'in' ? 0 : m.winner || m.live?.state === 'post' ? 2 : 1)
+  const deHoy = porFecha
+    .filter((m) => m.date === hoy)
+    .sort((a, b) => prioridad(a) - prioridad(b))
   const proximos = porFecha.filter((m) => m.date > hoy && !m.winner)
   const siguiente = porFecha.find(
     (m) => !m.winner && m.live?.state !== 'in' && new Date(m.utc).getTime() > Date.now()
@@ -390,7 +400,6 @@ function CuadroTeam({ teamId, match }) {
   const isLoser = match.winner && match.winner !== teamId
   const ev = match.live
   const score = ev && ev.state !== 'pre' ? ev.score?.[teamId] : null
-  const shootout = ev?.shootout?.[teamId]
 
   if (!team) {
     return (
@@ -411,12 +420,7 @@ function CuadroTeam({ teamId, match }) {
           </span>
         )}
       </span>
-      {score != null && (
-        <span className="cteam-score">
-          {score}
-          {shootout != null ? ` (${shootout})` : ''}
-        </span>
-      )}
+      {score != null && <span className="cteam-score">{score}</span>}
       {isWinner && score == null && <span className="cteam-check">✓</span>}
     </div>
   )
@@ -426,7 +430,10 @@ function cuadroStatus(match) {
   const ev = match.live
   if (ev?.state === 'in') return ev.halftime ? '⏸ Medio tiempo' : `🔴 ${ev.clock}`
   if (ev?.state === 'post') {
-    if (ev.finish === 'pens') return 'Fin · penales'
+    if (ev.finish === 'pens') {
+      const sh = ev.shootout
+      return `Fin · pen ${sh?.[match.homeTeam] ?? '?'}-${sh?.[match.awayTeam] ?? '?'}`
+    }
     if (ev.finish === 'aet') return 'Fin · t. extra'
     return 'Fin'
   }
