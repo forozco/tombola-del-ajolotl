@@ -1169,66 +1169,80 @@ body {
 
 /* ══════════════════════════════════════════════════════════════
    Responsive: tablet (iPad) y desktop
-   Mobile-first arriba; aquí se ensancha el contenedor y las listas
-   pasan a rejilla de varias columnas para aprovechar el espacio.
+   Mobile-first arriba. En pantallas anchas el tab Hoy pasa a DOS
+   columnas (partidos de hoy | próximos y resultados) para aprovechar
+   el espacio sin estirar los elementos; el contenedor se centra con
+   un ancho cómodo (no se estira infinito en pantallas enormes).
    ══════════════════════════════════════════════════════════════ */
 
-/* ── Tablet (iPad vertical y similares) ── */
-@media (min-width: 700px) {
+/* Espaciado base de los bloques del tab Hoy (aplica apilado en móvil) */
+.hoy-col-side .hoy-block + .hoy-block {
+  margin-top: 22px;
+}
+
+/* ── Tablet chico / móvil grande ── */
+@media (min-width: 620px) {
   .app {
-    max-width: 720px;
-    padding: 24px 20px calc(28px + env(safe-area-inset-bottom));
+    max-width: 600px;
+    padding: 22px 18px calc(28px + env(safe-area-inset-bottom));
   }
 
   .title {
-    font-size: 1.5rem;
+    font-size: 1.45rem;
+  }
+}
+
+/* ── Tablet grande / desktop: Hoy en dos columnas ── */
+@media (min-width: 940px) {
+  .app {
+    max-width: 1020px;
+    padding-top: 30px;
   }
 
-  /* Partidos del día y rondas en dos columnas */
-  .round-matches {
-    grid-template-columns: 1fr 1fr;
+  .hoy-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+    gap: 22px;
     align-items: start;
   }
 
-  /* Próximos y últimos resultados en dos columnas (sin estirar al expandir) */
-  .mini-list {
-    grid-template-columns: 1fr 1fr;
+  /* Alinear el tope de ambas columnas (sin el margen del primer título) */
+  .hoy-col-side .hoy-block:first-child .next-title {
+    margin-top: 0;
+  }
+
+  /* El Camino (vista Lista) en dos columnas */
+  .bracket .round-matches {
+    grid-template-columns: repeat(2, 1fr);
     align-items: start;
   }
 
   /* Amigos en rejilla que se adapta al ancho */
   .friend-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  }
-}
-
-/* ── Desktop ── */
-@media (min-width: 1040px) {
-  .app {
-    max-width: 1000px;
-    padding-top: 32px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 
-  /* Rondas de El Camino (vista Lista) en tres columnas */
-  .round-matches {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  /* El cuadro (bracket) centrado, ya cabe sin tanto scroll */
   .cuadro {
     justify-content: center;
     margin: 0 auto;
   }
 
-  /* Un pelín más de aire en las tarjetas grandes */
-  .cd-teams {
-    font-size: 1.1rem;
+  .champion-banner {
+    padding: 18px 22px;
   }
 }
 
-/* En pantallas anchas, el header respira sin estirarse de más */
-@media (min-width: 700px) {
-  .champion-banner {
-    padding: 18px 20px;
+/* ── Pantallas grandes (desktop amplio, Studio Display) ── */
+@media (min-width: 1320px) {
+  .app {
+    max-width: 1180px;
+  }
+
+  .bracket .round-matches {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .cd-teams {
+    font-size: 1.12rem;
   }
 }

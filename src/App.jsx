@@ -721,63 +721,69 @@ function Hoy({ bracket, goToLlaves, onPick }) {
   return (
     <div className="hoy">
       <Countdown matches={porFecha} />
-      <h2 className="round-title">
-        {esHoyReal ? `Hoy · ${tituloJornada}` : tituloJornada}
-      </h2>
-      {deHoy.length > 0 ? (
-        <div className="round-matches">
-          {deHoy.map((m) => (
-            <MatchCard key={m.id} match={m} champion={bracket.champion} meta onPick={onPick} />
-          ))}
-        </div>
-      ) : (
-        <div className="today-empty">
-          <p>Hoy no hay partidos de la quiniela.</p>
-          {siguienteFecha && (
-            <p className="today-empty-next">
-              El siguiente es el <strong>{fechaLarga(siguienteFecha)}</strong>
-            </p>
+      <div className="hoy-cols">
+        <div className="hoy-col-main">
+          <h2 className="round-title">
+            {esHoyReal ? `Hoy · ${tituloJornada}` : tituloJornada}
+          </h2>
+          {deHoy.length > 0 ? (
+            <div className="round-matches">
+              {deHoy.map((m) => (
+                <MatchCard key={m.id} match={m} champion={bracket.champion} meta onPick={onPick} />
+              ))}
+            </div>
+          ) : (
+            <div className="today-empty">
+              <p>Hoy no hay partidos de la quiniela.</p>
+              {siguienteFecha && (
+                <p className="today-empty-next">
+                  El siguiente es el <strong>{fechaLarga(siguienteFecha)}</strong>
+                </p>
+              )}
+            </div>
           )}
         </div>
-      )}
 
-      {proximos.length > 0 && (
-        <>
-          <h2 className="round-title next-title">Próximos partidos</h2>
-          <div className="mini-list">
-            {proximos.slice(0, 5).map((m) => (
-              <div key={m.id} className="mini-item">
-                <MiniMatch
-                  match={m}
-                  bracket={bracket}
-                  abierto={abierto === m.id}
-                  onGoTo={() => setAbierto(abierto === m.id ? null : m.id)}
-                />
-                {abierto === m.id && <MatchCard match={m} champion={bracket.champion} meta />}
+        <div className="hoy-col-side">
+          {proximos.length > 0 && (
+            <section className="hoy-block">
+              <h2 className="round-title next-title">Próximos partidos</h2>
+              <div className="mini-list">
+                {proximos.slice(0, 5).map((m) => (
+                  <div key={m.id} className="mini-item">
+                    <MiniMatch
+                      match={m}
+                      bracket={bracket}
+                      abierto={abierto === m.id}
+                      onGoTo={() => setAbierto(abierto === m.id ? null : m.id)}
+                    />
+                    {abierto === m.id && <MatchCard match={m} champion={bracket.champion} meta />}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </>
-      )}
+            </section>
+          )}
 
-      {jugados.length > 0 && (
-        <>
-          <h2 className="round-title next-title">Últimos resultados</h2>
-          <div className="mini-list">
-            {jugados.slice(0, 5).map((m) => (
-              <div key={m.id} className="mini-item">
-                <MiniMatch
-                  match={m}
-                  bracket={bracket}
-                  abierto={abierto === m.id}
-                  onGoTo={() => setAbierto(abierto === m.id ? null : m.id)}
-                />
-                {abierto === m.id && <MatchCard match={m} champion={bracket.champion} meta />}
+          {jugados.length > 0 && (
+            <section className="hoy-block">
+              <h2 className="round-title next-title">Últimos resultados</h2>
+              <div className="mini-list">
+                {jugados.slice(0, 5).map((m) => (
+                  <div key={m.id} className="mini-item">
+                    <MiniMatch
+                      match={m}
+                      bracket={bracket}
+                      abierto={abierto === m.id}
+                      onGoTo={() => setAbierto(abierto === m.id ? null : m.id)}
+                    />
+                    {abierto === m.id && <MatchCard match={m} champion={bracket.champion} meta />}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </>
-      )}
+            </section>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
