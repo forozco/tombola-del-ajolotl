@@ -363,6 +363,44 @@ body {
   color: #16a34a;
 }
 
+/* ── Ticker de partidos en vivo ── */
+.live-ticker {
+  position: sticky;
+  top: 64px;
+  z-index: 9;
+  display: flex;
+  gap: 8px;
+  margin: -6px 0 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.live-ticker::-webkit-scrollbar {
+  display: none;
+}
+
+.ticker-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, #dc2626 45%, var(--border));
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+}
+
+.ticker-min {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #dc2626;
+}
+
 /* ── Goles, countdown y admin ── */
 .goles {
   display: flex;

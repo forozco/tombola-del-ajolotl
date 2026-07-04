@@ -177,7 +177,10 @@ function MatchCard({ match, champion, meta, onPick }) {
   const enVivo = match.live?.state === 'in'
   const terminado = match.live?.state === 'post'
   return (
-    <div className={`match-card${match.winner ? ' decided' : ''}${enVivo ? ' playing' : ''}`}>
+    <div
+      id={`match-${match.id}`}
+      className={`match-card${match.winner ? ' decided' : ''}${enVivo ? ' playing' : ''}`}
+    >
       {meta && (
         <div className="match-meta">
           <span className="round-chip">{ROUNDS[match.round]}</span>
@@ -336,18 +339,34 @@ function Countdown({ matches }) {
   )
 }
 
+// Ticker fijo con los partidos en vivo: siempre visible bajo los tabs,
+// tocarlo lleva directo a la tarjeta del partido
+function LiveTicker({ bracket, onVer }) {
+  const enVivo = bracket.resolved.filter((m) => m.live?.state === 'in')
+  if (!enVivo.length) return null
+  return (
+    <div className="live-ticker">
+      {enVivo.map((m) => (
+        <button key={m.id} className="ticker-chip" onClick={() => onVer(m)}>
+          <span className="live-dot" />
+          {TEAMS[m.homeTeam].flag} {m.live.score?.[m.homeTeam]}–{m.live.score?.[m.awayTeam]}{' '}
+          {TEAMS[m.awayTeam].flag}
+          <span className="ticker-min">{m.live.halftime ? 'MT' : m.live.clock}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // Tab "Hoy": partidos del día, los que vienen y los últimos resultados
 function Hoy({ bracket, goToLlaves, onPick }) {
   const hoy = todayStr()
   const porFecha = [...bracket.resolved].sort((a, b) =>
     `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)
   )
-  // Hoy: solo los EN VIVO flotan hasta arriba; el resto conserva su orden
-  // cronológico (un partido terminado se queda en su lugar, no se hunde)
-  const enVivo = (m) => (m.live?.state === 'in' ? 0 : 1)
-  const deHoy = porFecha
-    .filter((m) => m.date === hoy)
-    .sort((a, b) => enVivo(a) - enVivo(b))
+  // Hoy: orden cronológico estable — los partidos nunca cambian de lugar;
+  // los que están en vivo se tienen presentes con el ticker fijo de arriba
+  const deHoy = porFecha.filter((m) => m.date === hoy)
   const proximos = porFecha.filter((m) => m.date > hoy && !m.winner)
   const jugados = porFecha.filter((m) => m.winner && m.date <= hoy).reverse()
   const siguienteFecha = proximos[0]?.date
@@ -786,6 +805,18 @@ export default function App() {
           🌸 Amigos
         </button>
       </nav>
+
+      <LiveTicker
+        bracket={bracket}
+        onVer={(m) => {
+          setTab('hoy')
+          setTimeout(() => {
+            document
+              .getElementById(`match-${m.id}`)
+              ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }, 120)
+        }}
+      />
 
       {tab === 'hoy' && <Hoy bracket={bracket} goToLlaves={() => setTab('llaves')} onPick={pick} />}
       {tab === 'llaves' && (
