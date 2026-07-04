@@ -434,6 +434,22 @@ button,
   gap: 10px;
 }
 
+/* Sub-bloques de una ronda en la vista Lista: el grupo con actividad va
+   primero sin etiqueta; "Por definir" y "Terminados" se separan con su
+   mini-título para que la ronda se lea por capas de relevancia. */
+.round-group + .round-group {
+  margin-top: 18px;
+}
+
+.round-subtitle {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin: 0 0 8px;
+  font-weight: 800;
+}
+
 .match-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -1588,16 +1604,24 @@ body {
     margin-top: 0;
   }
 
-  /* El Camino (vista Lista) en dos columnas, todas las tarjetas del mismo
-     alto (la más alta manda) para que no se vea disparejo cuando una está
-     en vivo y crece */
+  /* El Camino (vista Lista) en dos columnas. Cada fila del grid iguala sus
+     tarjetas a la más alta de ESA fila (stretch por default) — sin
+     grid-auto-rows:1fr, que contagiaba la altura de la card en vivo a toda
+     la ronda y dejaba las demás con un hueco abajo. */
   .bracket .round-matches {
     grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 1fr;
   }
 
+  /* Si a una tarjeta le sobra alto (su vecina de fila trae crónica o barra
+     de en vivo), el sobrante se reparte entre los renglones de equipo en
+     lugar de acumularse abajo. */
   .bracket .match-card {
-    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bracket .match-card .team-row {
+    flex: 1;
   }
 
   /* Amigos en rejilla que se adapta al ancho */
