@@ -1316,7 +1316,10 @@ export default function App() {
         </div>
       )}
 
-      <nav className="tabs">
+      <nav
+        className="tabs"
+        style={{ '--active-tab-index': ['hoy', 'llaves', 'amigos'].indexOf(tab) }}
+      >
         <button className={tab === 'hoy' ? 'active' : ''} onClick={() => setTab('hoy')}>
           Hoy
         </button>
@@ -1340,28 +1343,35 @@ export default function App() {
         }}
       />
 
-      {tab === 'hoy' && <Hoy bracket={bracket} goToLlaves={() => setTab('llaves')} onPick={pick} />}
-      {tab === 'llaves' && (
-        <>
-          <div className="vista-toggle">
-            <button
-              className={vista === 'cuadro' ? 'active' : ''}
-              onClick={() => setVista('cuadro')}
-            >
-              <IconBracket /> Bracket
-            </button>
-            <button className={vista === 'lista' ? 'active' : ''} onClick={() => setVista('lista')}>
-              <IconLista /> Lista
-            </button>
-          </div>
-          {vista === 'cuadro' ? (
-            <Cuadro bracket={bracket} />
-          ) : (
-            <Bracket bracket={bracket} onPick={pick} />
-          )}
-        </>
-      )}
-      {tab === 'amigos' && <Amigos bracket={bracket} />}
+      {/* key={tab} fuerza el remount al cambiar de pestaña → dispara la
+          animación de entrada del contenido (definida en styles.css). */}
+      <div className="tab-content" key={tab}>
+        {tab === 'hoy' && <Hoy bracket={bracket} goToLlaves={() => setTab('llaves')} onPick={pick} />}
+        {tab === 'llaves' && (
+          <>
+            <div className="vista-toggle">
+              <button
+                className={vista === 'cuadro' ? 'active' : ''}
+                onClick={() => setVista('cuadro')}
+              >
+                <IconBracket /> Bracket
+              </button>
+              <button
+                className={vista === 'lista' ? 'active' : ''}
+                onClick={() => setVista('lista')}
+              >
+                <IconLista /> Lista
+              </button>
+            </div>
+            {vista === 'cuadro' ? (
+              <Cuadro bracket={bracket} />
+            ) : (
+              <Bracket bracket={bracket} onPick={pick} />
+            )}
+          </>
+        )}
+        {tab === 'amigos' && <Amigos bracket={bracket} />}
+      </div>
 
       <footer className="footer">
         <p>
