@@ -335,6 +335,9 @@ button,
   font-weight: 700;
   font-size: 0.9rem;
   padding: 10px;
+  /* Altura fija: el modo Street Fighter cambia a fuente pixel más chica y
+     sin esto los botones adelgazarían/engordarían al entrar y salir */
+  min-height: 38px;
   border-radius: 999px;
   cursor: pointer;
   transition: color var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -876,6 +879,8 @@ button,
   font-weight: 700;
   font-size: 0.85rem;
   padding: 9px;
+  /* Igual que .tabs button: altura estable entre modo normal y arcade */
+  min-height: 36px;
   border-radius: 9px;
   cursor: pointer;
   transition: color var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -2172,4 +2177,178 @@ body {
   .sf-insert-coin {
     font-size: 0.5rem;
   }
+}
+
+/* ── Modo Street Fighter global ── */
+/* Al entrar al tab SF, App marca <html data-sf="1"> y TODA la app se
+   retematiza vía variables: header, tabs, ticker, footer, todo cae al
+   gabinete arcade. Va al final del archivo para ganar el empate de
+   especificidad contra :root[data-theme='dark']. */
+:root[data-sf='1'] {
+  --accent: #ffd23e;
+  --bg: #050518;
+  --card: #12123a;
+  --text: #e8e8ff;
+  --muted: #8d8dc9;
+  --border: #34347a;
+  --win: #35d46f;
+  --win-bg: #0e2b1c;
+  --win-border: #1e7a3c;
+  --live: #ff2d55;
+  --shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* Scanlines de CRT sobre la app completa (no solo el gabinete) */
+:root[data-sf='1'] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 2px,
+    rgba(0, 0, 0, 0.14) 2px 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* La marca y el chrome hablan pixel mientras dura el modo arcade */
+:root[data-sf='1'] .title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: #ffd23e;
+  text-shadow: 2px 2px 0 #ff2d55;
+}
+
+:root[data-sf='1'] .tagline {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.42rem;
+  color: #37e5ff;
+  letter-spacing: 0.08em;
+}
+
+:root[data-sf='1'] .tabs button {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.52rem;
+  font-weight: 400;
+}
+
+/* La pastilla activa ahora es dorada: el texto encima se oscurece */
+:root[data-sf='1'] .tabs button.active {
+  color: #241c00;
+}
+
+:root[data-sf='1'] .vista-toggle button {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.48rem;
+  font-weight: 400;
+}
+
+:root[data-sf='1'] .footer,
+:root[data-sf='1'] .footer-version {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  line-height: 1.8;
+}
+
+/* El fundido de página completa al entrar/salir del modo (View Transitions):
+   un beat más lento que el crossfade default para que se sienta el cambio
+   de mundo, sin estorbar. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.5s;
+}
+
+/* ── Street Fighter: escenarios, avioncito y fondo del mapa ── */
+
+/* La pelea se ve EN el escenario del peleador local: el stage de fondo con
+   un velo oscuro para que nombres y barras sigan legibles encima */
+.sf-card {
+  position: relative;
+}
+
+.sf-card.con-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sf-panel) 68%, transparent) 0%,
+      color-mix(in srgb, var(--sf-panel2) 88%, transparent) 100%
+    ),
+    var(--stage-img);
+  background-size: cover;
+  background-position: center bottom;
+}
+
+.sf-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ubicación del combate, como el letrero del mapa del juego */
+.sf-stage-label {
+  font-size: 0.36rem;
+  letter-spacing: 0.12em;
+  color: var(--sf-gold);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.85);
+  text-align: center;
+  padding: 0 8px 7px;
+}
+
+/* El avioncito del mapa viajando a la siguiente pelea (cruces por definir):
+   la ruta punteada roja del juego + el sprite original de 16px volando */
+.sf-plane {
+  position: relative;
+  height: 22px;
+  margin: 2px 12px;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--sf-red) 60%, transparent) 0 7px,
+      transparent 7px 14px
+    )
+    center / 100% 2px no-repeat;
+}
+
+.sf-plane::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -30px;
+  width: 26px;
+  height: 24px;
+  transform: translateY(-50%);
+  background: url('/sf/plane.png') center / contain no-repeat;
+  image-rendering: pixelated;
+  animation: sf-fly 3.6s linear infinite;
+}
+
+@keyframes sf-fly {
+  to {
+    left: calc(100% + 30px);
+  }
+}
+
+/* Fondo de TODA la app en modo arcade: el mapa mundial de Street Fighter
+   con velo oscuro, en capa fija propia (body::before) porque iOS no soporta
+   background-attachment: fixed */
+:root[data-sf='1'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 24, 0.86) 0%, rgba(5, 5, 24, 0.95) 100%),
+    url('/sf/worldmap.jpg') center / cover no-repeat;
+}
+
+/* Los paneles dejan pasar un poco el mapa: tarjetas apenas translúcidas */
+:root[data-sf='1'] .sf-arcade {
+  background:
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(35, 35, 100, 0.75) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(16, 16, 46, 0.82) 0%, rgba(10, 10, 36, 0.88) 100%);
 }

@@ -111,12 +111,24 @@ function sfStatus(match) {
 function SfCard({ match }) {
   const enVivo = match.live?.state === 'in'
   const conVs = !match.winner && (match.homeTeam || match.awayTeam)
+  const vacio = !match.homeTeam && !match.awayTeam
+  // Como en el juego: la pelea se juega en el escenario del peleador local.
+  // Sin local definido aún, el del visitante; sin nadie, no hay stage.
+  const anfitrion = OWNER_BY_TEAM[match.homeTeam] ?? OWNER_BY_TEAM[match.awayTeam]
+  const stage = anfitrion ? FIGHTERS[anfitrion.id] : null
   return (
-    <div className={`sf-card${match.winner ? ' decided' : ''}${enVivo ? ' playing' : ''}`}>
+    <div
+      className={`sf-card${match.winner ? ' decided' : ''}${enVivo ? ' playing' : ''}${stage ? ' con-stage' : ''}`}
+      style={stage ? { '--stage-img': `url(${stage.stage})` } : undefined}
+    >
       <div className={`sf-status${enVivo ? ' live' : ''}`}>{sfStatus(match)}</div>
       <SfFighter teamId={match.homeTeam} match={match} />
       {conVs && <div className={`sf-vs${enVivo ? ' fight' : ''}`}>{enVivo ? 'FIGHT!' : 'VS'}</div>}
+      {/* Cruce aún sin peleadores: el avioncito del mapa viaja a la
+          siguiente pelea, como entre combates del arcade */}
+      {vacio && <div className="sf-plane" aria-hidden="true" />}
       <SfFighter teamId={match.awayTeam} match={match} />
+      {stage && <div className="sf-stage-label">{stage.city}</div>}
     </div>
   )
 }
