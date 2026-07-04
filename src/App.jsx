@@ -5,6 +5,30 @@ import { fetchLive, pairKey } from './live.js'
 
 import { simLive, simNow } from './simulacion.js'
 import { FLAG_URLS } from './banderas.js'
+import { useRegisterSW } from 'virtual:pwa-register/react'
+
+// Aviso de nueva versión: el service worker detecta un deploy nuevo y muestra
+// una barra para actualizar. Al tocarla, activa la versión nueva y recarga.
+function ActualizacionDisponible() {
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW()
+  if (!needRefresh) return null
+  return (
+    <div className="update-toast" role="alert">
+      <span>Hay una versión nueva de la app</span>
+      <div className="update-actions">
+        <button className="update-later" onClick={() => setNeedRefresh(false)}>
+          Ahora no
+        </button>
+        <button className="update-now" onClick={() => updateServiceWorker(true)}>
+          Actualizar
+        </button>
+      </div>
+    </div>
+  )
+}
 
 // Puerta de emergencia: con ?admin en la URL se puede corregir un resultado
 // a mano (por si la API fallara). En uso normal la app es solo de consulta.
@@ -1057,6 +1081,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <ActualizacionDisponible />
       <header className="header">
         <div className="header-top">
           <div className="brand">

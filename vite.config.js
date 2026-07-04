@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
@@ -19,7 +20,22 @@ const sha = (
 ).slice(0, 7)
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      // 'prompt': cuando hay una versión nueva NO se activa sola; avisamos al
+      // usuario y él decide actualizar (flujo controlado desde la app)
+      registerType: 'prompt',
+      injectRegister: null, // el registro lo hace useRegisterSW en la app
+      manifest: false, // usamos el manifest propio en public/
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        navigateFallback: '/index.html',
+        cleanupOutdatedCaches: true,
+      },
+      devOptions: { enabled: false },
+    }),
+  ],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __APP_SHA__: JSON.stringify(sha),

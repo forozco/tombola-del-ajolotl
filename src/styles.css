@@ -52,7 +52,12 @@ body {
 .app {
   max-width: 480px;
   margin: 0 auto;
-  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  /* Respeta las zonas seguras del dispositivo: barra de estado/notch arriba,
+     el notch lateral en horizontal y el indicador de inicio abajo (PWA iOS) */
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
 /* ── Header ── */
@@ -215,7 +220,7 @@ body {
   border-radius: 999px;
   padding: 4px;
   position: sticky;
-  top: 8px;
+  top: calc(8px + env(safe-area-inset-top));
   z-index: 10;
   box-shadow: var(--shadow);
 }
@@ -468,7 +473,7 @@ body {
 /* ── Ticker de partidos en vivo ── */
 .live-ticker {
   position: sticky;
-  top: 64px;
+  top: calc(64px + env(safe-area-inset-top));
   z-index: 9;
   display: flex;
   gap: 8px;
@@ -1049,6 +1054,67 @@ body {
   letter-spacing: 0.04em;
   opacity: 0.5;
   font-variant-numeric: tabular-nums;
+}
+
+/* ── Aviso de nueva versión ── */
+.update-toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 100;
+  width: calc(100% - 24px);
+  max-width: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  font-size: 0.85rem;
+  font-weight: 600;
+  animation: toast-in 0.3s ease;
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateX(-50%) translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.update-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.update-later,
+.update-now {
+  border: none;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.update-later {
+  background: transparent;
+  color: var(--bg);
+  opacity: 0.7;
+}
+
+.update-now {
+  background: var(--accent);
+  color: #fff;
 }
 
 /* ══════════════════════════════════════════════════════════════
