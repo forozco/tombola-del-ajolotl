@@ -19,10 +19,12 @@ function RosterCell({ owner, bracket }) {
   const campeon = bracket.champion && OWNER_BY_TEAM[bracket.champion]?.id === owner.id
   return (
     <div className={`sf-cell${eliminado ? ' out' : ''}${campeon ? ' champ' : ''}`}>
+      {/* Mientras siga vivo pelea (stance animado); ya eliminado, su retrato
+          golpeado del continue screen */}
       <div className="sf-cell-sprite">
         <img
           className={f.pixelated ? 'pixelated' : ''}
-          src={f.stance}
+          src={eliminado ? f.ko : f.stance}
           alt={f.fighter}
           loading="lazy"
         />

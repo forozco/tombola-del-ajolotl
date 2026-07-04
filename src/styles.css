@@ -1776,8 +1776,11 @@ body {
   height: 74px;
 }
 
+/* Eliminado: se muestra su retrato golpeado (espejeado para que también
+   vea a la derecha), apenas apagado para que se aprecien los moretones */
 .sf-cell.out img {
-  filter: grayscale(1) brightness(0.45);
+  filter: grayscale(0.3) brightness(0.8);
+  transform: scaleX(-1);
 }
 
 .sf-cell.out .sf-cell-name {
