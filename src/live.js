@@ -40,6 +40,18 @@ export async function fetchLive() {
       else if (away.winner) winnerId = awayId
       finish = enPenales ? 'pens' : /AET/i.test(shortDetail ?? '') ? 'aet' : 'ft'
     }
+    // Goles con minuto y goleador (vienen en la misma respuesta)
+    const espnIdToApp = { [home.team?.id]: homeId, [away.team?.id]: awayId }
+    const goals = (comp.details ?? [])
+      .filter((d) => d.scoringPlay && !d.shootout)
+      .sort((a, b) => (a.clock?.value ?? 0) - (b.clock?.value ?? 0))
+      .map((d) => ({
+        minute: d.clock?.displayValue ?? '',
+        player: d.athletesInvolved?.[0]?.displayName ?? 'Gol',
+        teamId: espnIdToApp[d.team?.id] ?? null,
+        ownGoal: Boolean(d.ownGoal),
+        penalty: Boolean(d.penaltyKick),
+      }))
     out[pairKey(homeId, awayId)] = {
       utc: event.date,
       state,
@@ -49,6 +61,7 @@ export async function fetchLive() {
       shootout: { [homeId]: home.shootoutScore, [awayId]: away.shootoutScore },
       winnerId,
       finish,
+      goals,
     }
   }
   return out

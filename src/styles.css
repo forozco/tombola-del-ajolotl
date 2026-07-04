@@ -359,6 +359,49 @@ body {
   color: #16a34a;
 }
 
+/* ── Goles, countdown y admin ── */
+.goles {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 12px 10px;
+  border-top: 1px dashed var(--border);
+}
+
+.gol {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.countdown {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.countdown strong {
+  color: var(--accent);
+}
+
+.admin-pill {
+  color: #d97706;
+  border-color: color-mix(in srgb, #d97706 40%, transparent);
+}
+
+.team-row.admin {
+  cursor: pointer;
+}
+
+.team-row.admin:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
 /* ── Cuadro (bracket gráfico) ── */
 .vista-toggle {
   display: flex;

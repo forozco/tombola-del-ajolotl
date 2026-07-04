@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { TEAMS, OWNERS, OWNER_BY_TEAM, MATCHES, ROUNDS, POZO } from './data.js'
-import { hasSupabase, fetchResults, subscribeResults, saveResult } from './sync.js'
+import { hasSupabase, fetchResults, subscribeResults, saveResult, deleteResult } from './sync.js'
 import { fetchLive, pairKey } from './live.js'
+
+// Puerta de emergencia: con ?admin en la URL se puede corregir un resultado
+// a mano (por si la API fallara). En uso normal la app es solo de consulta.
+const ES_ADMIN = new URLSearchParams(window.location.search).has('admin')
 
 const STORAGE_KEY = 'tombola-ajolotl-v1'
 const THEME_KEY = 'tombola-ajolotl-theme'
@@ -109,7 +113,7 @@ function OwnerChip({ owner, small }) {
   )
 }
 
-function TeamRow({ teamId, match, champion }) {
+function TeamRow({ teamId, match, champion, onPick }) {
   const team = teamId ? TEAMS[teamId] : null
   const owner = teamId ? OWNER_BY_TEAM[teamId] : null
   const isWinner = match.winner && match.winner === teamId
@@ -117,6 +121,7 @@ function TeamRow({ teamId, match, champion }) {
   const ev = match.live
   const score = ev && ev.state !== 'pre' ? ev.score?.[teamId] : null
   const shootout = ev?.shootout?.[teamId]
+  const admin = ES_ADMIN && onPick && match.homeTeam && match.awayTeam
 
   if (!team) {
     return (
@@ -127,7 +132,10 @@ function TeamRow({ teamId, match, champion }) {
     )
   }
   return (
-    <div className={`team-row${isWinner ? ' winner' : ''}${isLoser ? ' loser' : ''}`}>
+    <div
+      className={`team-row${isWinner ? ' winner' : ''}${isLoser ? ' loser' : ''}${admin ? ' admin' : ''}`}
+      onClick={admin ? () => onPick(match.id, teamId) : undefined}
+    >
       <span className="flag">{team.flag}</span>
       <span className="team-name">{team.name}</span>
       <OwnerChip owner={owner} small />
@@ -154,7 +162,7 @@ function finishLabel(match) {
   return 'Final · en los 90 minutos'
 }
 
-function MatchCard({ match, champion, meta }) {
+function MatchCard({ match, champion, meta, onPick }) {
   const homeOwner = match.homeTeam ? OWNER_BY_TEAM[match.homeTeam] : null
   const awayOwner = match.awayTeam ? OWNER_BY_TEAM[match.awayTeam] : null
   const duel = homeOwner && awayOwner && homeOwner.id !== awayOwner.id
@@ -187,13 +195,25 @@ function MatchCard({ match, champion, meta }) {
           😎 ¡{homeOwner.name} juega contra sí mismo — avanza seguro!
         </div>
       )}
-      <TeamRow teamId={match.homeTeam} match={match} champion={champion} />
-      <TeamRow teamId={match.awayTeam} match={match} champion={champion} />
+      <TeamRow teamId={match.homeTeam} match={match} champion={champion} onPick={onPick} />
+      <TeamRow teamId={match.awayTeam} match={match} champion={champion} onPick={onPick} />
+      {meta && match.live?.goals?.length > 0 && (
+        <div className="goles">
+          {match.live.goals.map((g, i) => (
+            <span key={i} className="gol">
+              ⚽ {g.minute} {g.player}
+              {g.penalty ? ' (penal)' : ''}
+              {g.ownGoal ? ' (autogol)' : ''}
+              {g.teamId ? ` · ${TEAMS[g.teamId].flag}` : ''}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-function Bracket({ bracket }) {
+function Bracket({ bracket, onPick }) {
   return (
     <div className="bracket">
       {ROUNDS.map((label, round) => (
@@ -206,7 +226,7 @@ function Bracket({ bracket }) {
             {bracket.resolved
               .filter((m) => m.round === round)
               .map((m) => (
-                <MatchCard key={m.id} match={m} champion={bracket.champion} />
+                <MatchCard key={m.id} match={m} champion={bracket.champion} onPick={onPick} />
               ))}
           </div>
         </section>
@@ -271,24 +291,51 @@ function MiniMatch({ match, onGoTo }) {
   )
 }
 
+// Cuenta regresiva al siguiente partido que aún no arranca
+function Countdown({ match }) {
+  const [ahora, setAhora] = useState(() => Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setAhora(Date.now()), 30_000)
+    return () => clearInterval(t)
+  }, [])
+  const diff = new Date(match.utc).getTime() - ahora
+  if (diff <= 0) return null
+  const dias = Math.floor(diff / 86_400_000)
+  const horas = Math.floor((diff % 86_400_000) / 3_600_000)
+  const mins = Math.floor((diff % 3_600_000) / 60_000)
+  const falta = dias >= 1 ? `${dias}d ${horas}h` : horas >= 1 ? `${horas}h ${mins}m` : `${mins} min`
+  const home = match.homeTeam ? TEAMS[match.homeTeam] : null
+  const away = match.awayTeam ? TEAMS[match.awayTeam] : null
+  return (
+    <div className="countdown">
+      ⏳ {home ? `${home.flag} ${home.name}` : 'Por definir'} vs{' '}
+      {away ? `${away.flag} ${away.name}` : 'Por definir'} <strong>en {falta}</strong>
+    </div>
+  )
+}
+
 // Tab "Hoy": partidos del día, los que vienen y los últimos resultados
-function Hoy({ bracket, goToLlaves }) {
+function Hoy({ bracket, goToLlaves, onPick }) {
   const hoy = todayStr()
   const porFecha = [...bracket.resolved].sort((a, b) =>
     `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)
   )
   const deHoy = porFecha.filter((m) => m.date === hoy)
   const proximos = porFecha.filter((m) => m.date > hoy && !m.winner)
+  const siguiente = porFecha.find(
+    (m) => !m.winner && m.live?.state !== 'in' && new Date(m.utc).getTime() > Date.now()
+  )
   const jugados = porFecha.filter((m) => m.winner && m.date <= hoy).reverse()
   const siguienteFecha = proximos[0]?.date
 
   return (
     <div className="hoy">
+      {siguiente && <Countdown match={siguiente} />}
       <h2 className="round-title">📅 Hoy · {fechaLarga(hoy)}</h2>
       {deHoy.length > 0 ? (
         <div className="round-matches">
           {deHoy.map((m) => (
-            <MatchCard key={m.id} match={m} champion={bracket.champion} meta />
+            <MatchCard key={m.id} match={m} champion={bracket.champion} meta onPick={onPick} />
           ))}
         </div>
       ) : (
@@ -538,7 +585,22 @@ function useResults() {
     }
   }
 
-  return { results, applyLive, online }
+  // Corrección manual (solo modo admin): toca para marcar, re-toca para deshacer
+  const pick = (matchId, teamId) => {
+    setResults((prev) => {
+      const undo = prev[matchId] === teamId
+      const next = { ...prev }
+      if (undo) delete next[matchId]
+      else next[matchId] = teamId
+      if (hasSupabase) {
+        const op = undo ? deleteResult(matchId) : saveResult(matchId, teamId)
+        op.then(({ error }) => error && console.error('Error al sincronizar:', error.message))
+      }
+      return next
+    })
+  }
+
+  return { results, applyLive, pick, online }
 }
 
 // Cadencia del sondeo según el momento: pegado al partido, casi en vivo
@@ -557,9 +619,24 @@ function pollDelay(data) {
   return 180_000
 }
 
+// Al caer un gol: vibra el teléfono y parpadea el título de la pestaña
+const TITULO_ORIGINAL = document.title
+let tituloTimer
+function avisoDeGol(teamId, ev) {
+  navigator.vibrate?.([200, 100, 200])
+  const ids = Object.keys(ev.score)
+  const marcador = `${ev.score[ids[0]]}-${ev.score[ids[1]]}`
+  document.title = `⚽ ¡GOOOL de ${TEAMS[teamId].name}! ${marcador}`
+  clearTimeout(tituloTimer)
+  tituloTimer = setTimeout(() => {
+    document.title = TITULO_ORIGINAL
+  }, 15_000)
+}
+
 // Sondea el marcador de ESPN y refresca al instante al volver a la pestaña
 function useLive() {
   const [live, setLive] = useState({})
+  const prevRef = useRef({})
   useEffect(() => {
     let timer
     let active = true
@@ -568,6 +645,15 @@ function useLive() {
       try {
         const data = await fetchLive()
         if (!active) return
+        // Detecta goles nuevos comparando contra el sondeo anterior
+        for (const [pair, ev] of Object.entries(data)) {
+          const antes = prevRef.current[pair]
+          if (!antes || ev.state !== 'in') continue
+          for (const id of Object.keys(ev.score)) {
+            if (Number(ev.score[id]) > Number(antes.score?.[id] ?? 0)) avisoDeGol(id, ev)
+          }
+        }
+        prevRef.current = data
         setLive(data)
         timer = setTimeout(poll, pollDelay(data))
       } catch {
@@ -605,7 +691,7 @@ function marcadorTexto(m) {
 }
 
 export default function App() {
-  const { results, applyLive, online } = useResults()
+  const { results, applyLive, pick, online } = useResults()
   const live = useLive()
   const [theme, setTheme] = useState(loadTheme)
   const [tab, setTab] = useState('hoy')
@@ -648,6 +734,7 @@ export default function App() {
           <span className={`sync-pill${online ? ' online' : ''}`}>
             {online ? '🟢 En vivo' : '⚪ Local'}
           </span>
+          {ES_ADMIN && <span className="sync-pill admin-pill">🔧 admin</span>}
         </p>
       </header>
 
@@ -677,7 +764,7 @@ export default function App() {
         </button>
       </nav>
 
-      {tab === 'hoy' && <Hoy bracket={bracket} goToLlaves={() => setTab('llaves')} />}
+      {tab === 'hoy' && <Hoy bracket={bracket} goToLlaves={() => setTab('llaves')} onPick={pick} />}
       {tab === 'llaves' && (
         <>
           <div className="vista-toggle">
@@ -691,7 +778,11 @@ export default function App() {
               📋 Lista
             </button>
           </div>
-          {vista === 'cuadro' ? <Cuadro bracket={bracket} /> : <Bracket bracket={bracket} />}
+          {vista === 'cuadro' ? (
+            <Cuadro bracket={bracket} />
+          ) : (
+            <Bracket bracket={bracket} onPick={pick} />
+          )}
         </>
       )}
       {tab === 'amigos' && <Amigos bracket={bracket} />}

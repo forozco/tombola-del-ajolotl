@@ -37,3 +37,8 @@ export async function saveResult(matchId, winner, marcador) {
   }
   return supabase.from('resultados').upsert({ match_id: matchId, winner })
 }
+
+// Solo lo usa el modo admin de emergencia (?admin en la URL)
+export function deleteResult(matchId) {
+  return supabase.from('resultados').delete().eq('match_id', matchId)
+}
