@@ -30,6 +30,93 @@ function ActualizacionDisponible() {
   )
 }
 
+// Jalar desde arriba para actualizar (pull-to-refresh). En la PWA de iOS no
+// existe el gesto nativo; este lo reemplaza: al estar hasta arriba y jalar
+// hacia abajo, recarga la app (trae datos frescos y detecta versión nueva).
+function PullToRefresh() {
+  const [dist, setDist] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const startY = useRef(null)
+  const distRef = useRef(0)
+  const UMBRAL = 72
+  const MAX = 110
+
+  useEffect(() => {
+    const onStart = (e) => {
+      startY.current =
+        window.scrollY <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null
+    }
+    const onMove = (e) => {
+      if (startY.current == null || refreshing) return
+      const dy = e.touches[0].clientY - startY.current
+      if (dy <= 0 || window.scrollY > 0) {
+        startY.current = null
+        if (distRef.current) {
+          distRef.current = 0
+          setDist(0)
+        }
+        return
+      }
+      const d = Math.min(dy * 0.5, MAX) // resistencia elástica
+      distRef.current = d
+      setDist(d)
+      if (d > 4 && e.cancelable) e.preventDefault() // frena el scroll mientras se jala
+    }
+    const onEnd = () => {
+      if (startY.current == null) return
+      startY.current = null
+      if (distRef.current >= UMBRAL) {
+        setRefreshing(true)
+        setDist(UMBRAL)
+        setTimeout(() => window.location.reload(), 400)
+      } else {
+        distRef.current = 0
+        setDist(0)
+      }
+    }
+    document.addEventListener('touchstart', onStart, { passive: true })
+    document.addEventListener('touchmove', onMove, { passive: false })
+    document.addEventListener('touchend', onEnd, { passive: true })
+    document.addEventListener('touchcancel', onEnd, { passive: true })
+    return () => {
+      document.removeEventListener('touchstart', onStart)
+      document.removeEventListener('touchmove', onMove)
+      document.removeEventListener('touchend', onEnd)
+      document.removeEventListener('touchcancel', onEnd)
+    }
+  }, [refreshing])
+
+  const visible = dist > 0 || refreshing
+  const listo = dist >= UMBRAL
+  return (
+    <div
+      className={`ptr${visible ? ' visible' : ''}`}
+      style={{ transform: `translate(-50%, ${visible ? Math.min(dist, MAX) : -20}px)` }}
+      aria-hidden={!visible}
+    >
+      <span className={`ptr-spinner${refreshing ? ' spinning' : ''}`}>
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ transform: refreshing ? undefined : `rotate(${dist * 2.6}deg)` }}
+        >
+          <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+          <path d="M21 3v6h-6" />
+        </svg>
+      </span>
+      <span className="ptr-text">
+        {refreshing ? 'Actualizando…' : listo ? 'Suelta para actualizar' : 'Jala para actualizar'}
+      </span>
+    </div>
+  )
+}
+
 // Puerta de emergencia: con ?admin en la URL se puede corregir un resultado
 // a mano (por si la API fallara). En uso normal la app es solo de consulta.
 const ES_ADMIN = new URLSearchParams(window.location.search).has('admin')
@@ -1136,6 +1223,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <PullToRefresh />
       <ActualizacionDisponible />
       <header className="header">
         <div className="header-top">

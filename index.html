@@ -10,6 +10,9 @@
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1ecf6" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#16101c" />
     <title>Tómbola del Ajolotl</title>
+    <!-- Favicon adaptativo: el ícono de la pestaña se ajusta al tema del SO -->
+    <link rel="icon" href="/favicon-light.svg" media="(prefers-color-scheme: light)" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-dark.svg" media="(prefers-color-scheme: dark)" type="image/svg+xml" />
     <link rel="icon" href="/ajolote.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -19,6 +22,15 @@
          el header) y su texto se adapta a claro/oscuro -->
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Tómbola" />
+    <!-- Splash screens de iOS (Android la genera solo desde el manifest) -->
+    <link rel="apple-touch-startup-image" media="(device-width:430px) and (device-height:932px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)" href="/splash/1290x2796.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:393px) and (device-height:852px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)" href="/splash/1179x2556.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:390px) and (device-height:844px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)" href="/splash/1170x2532.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)" href="/splash/1125x2436.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)" href="/splash/1242x2688.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:414px) and (device-height:896px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)" href="/splash/828x1792.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:375px) and (device-height:667px) and (-webkit-device-pixel-ratio:2) and (orientation:portrait)" href="/splash/750x1334.png" />
+    <link rel="apple-touch-startup-image" media="(device-width:414px) and (device-height:736px) and (-webkit-device-pixel-ratio:3) and (orientation:portrait)" href="/splash/1242x2208.png" />
   </head>
   <body>
     <div id="root"></div>

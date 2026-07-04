@@ -29,7 +29,10 @@ export default defineConfig({
       injectRegister: null, // el registro lo hace useRegisterSW en la app
       manifest: false, // usamos el manifest propio en public/
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,woff2}', 'icon-192.png', 'icon-512.png'],
+        // Las splash y las variantes de ícono las carga el SO al abrir; no vale
+        // la pena precachearlas (pesan y no se necesitan offline)
+        globIgnores: ['splash/**', 'icon-light-*.png', 'icon-dark-*.png'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
       },
