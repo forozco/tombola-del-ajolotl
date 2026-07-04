@@ -956,3 +956,10 @@ body {
   margin-top: 8px;
   padding: 12px;
 }
+
+.footer-tz {
+  display: block;
+  margin-top: 6px;
+  font-weight: 600;
+  opacity: 0.75;
+}

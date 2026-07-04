@@ -116,6 +116,19 @@ function fechaCorta(dateStr) {
   })
 }
 
+// Abreviatura de la zona horaria del dispositivo (p. ej. "GMT-6"), para
+// dejar claro que los horarios se muestran en la hora local de cada quien
+function zonaHoraria() {
+  try {
+    const parts = new Intl.DateTimeFormat('es-MX', { timeZoneName: 'short' }).formatToParts(
+      new Date()
+    )
+    return parts.find((p) => p.type === 'timeZoneName')?.value ?? ''
+  } catch {
+    return ''
+  }
+}
+
 // Iconos de línea para el switch de tema
 function IconSol() {
   return (
@@ -1008,6 +1021,7 @@ export default function App() {
       <footer className="footer">
         Goles, resultados y llaves se actualizan solos desde el marcador oficial · aquí nadie
         captura nada
+        <span className="footer-tz">Horarios en tu hora local ({zonaHoraria()})</span>
       </footer>
     </div>
   )
