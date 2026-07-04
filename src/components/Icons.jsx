@@ -1,0 +1,49 @@
+// Iconos SVG inline usados por header y toggles. Se prefieren aquí sobre una
+// librería para no cargar código externo (los 5 iconos suman <1KB gzip).
+
+// Sol para el modo claro
+export function IconSol() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </svg>
+  )
+}
+
+// Luna para el modo oscuro
+export function IconLuna() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+    </svg>
+  )
+}
+
+// "Auto": círculo mitad relleno — el tema sigue al dispositivo
+export function IconAuto() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+// Icono del toggle "Bracket" (llaves gráficas) de El Camino
+export function IconBracket() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 7h4M4 17h4M8 7v10M8 12h9" />
+    </svg>
+  )
+}
+
+// Icono del toggle "Lista" de El Camino
+export function IconLista() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M8 6h12M8 12h12M8 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+    </svg>
+  )
+}
