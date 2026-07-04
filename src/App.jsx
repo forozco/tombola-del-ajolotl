@@ -913,10 +913,7 @@ export default function App() {
         <div className="header-top">
           <div className="brand">
             <img className="brand-logo" src="/ajolote.svg" alt="" />
-            <div>
-              <h1 className="title">Tómbola del Ajolotl</h1>
-              <p className="tagline">Mundial 2026 · Quiniela de los Coonstl</p>
-            </div>
+            <h1 className="title">Tómbola del Ajolotl</h1>
           </div>
           <button
             className="theme-btn"
@@ -926,15 +923,15 @@ export default function App() {
             {theme === 'dark' ? <IconSol /> : <IconLuna />}
           </button>
         </div>
-        <div className="header-chips">
-          <span className="chip">Octavos en adelante</span>
+        <p className="tagline">
+          Mundial 2026 · Quiniela de los Coonstl
           <span className={`sync-pill${online ? ' online' : ''}`}>
             <span className="estado-dot" />
             {online ? 'En vivo' : 'Local'}
           </span>
           {ES_ADMIN && <span className="sync-pill admin-pill">admin</span>}
           {ES_SIM && <span className="sync-pill admin-pill">demo</span>}
-        </div>
+        </p>
       </header>
 
       {champOwner && (

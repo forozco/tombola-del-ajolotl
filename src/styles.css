@@ -47,14 +47,6 @@ body {
 }
 
 /* ── Header ── */
-.header {
-  background: color-mix(in srgb, var(--accent) 7%, var(--card));
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 14px 16px;
-  box-shadow: var(--shadow);
-}
-
 .header-top {
   display: flex;
   align-items: center;
@@ -65,48 +57,32 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
 .brand-logo {
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent) 30%, transparent));
 }
 
 .title {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--accent);
   white-space: nowrap;
 }
 
 .tagline {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted);
-  margin-top: 1px;
-}
-
-.header-chips {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-}
-
-.chip {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--card);
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
   color: var(--muted);
+  margin-top: 6px;
 }
 
 .bolsa-pill {
