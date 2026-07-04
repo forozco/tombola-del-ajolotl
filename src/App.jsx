@@ -208,7 +208,7 @@ function computeBracket(results, live = {}, detalles = {}) {
       eliminated.add(m.winner === m.homeTeam ? m.awayTeam : m.homeTeam)
     }
   }
-  const champion = resolved.find((m) => m.id === 'f1').winner
+  const champion = resolved.find((m) => m.id === 'f1')?.winner ?? null
   return { resolved, eliminated, champion }
 }
 
@@ -1261,7 +1261,7 @@ export default function App() {
         }
       }
     }
-  }, [bracket, results, detalles])
+  }, [bracket])
 
   return (
     <div className="app">
