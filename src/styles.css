@@ -1247,10 +1247,16 @@ body {
     margin-top: 0;
   }
 
-  /* El Camino (vista Lista) en dos columnas */
+  /* El Camino (vista Lista) en dos columnas, todas las tarjetas del mismo
+     alto (la más alta manda) para que no se vea disparejo cuando una está
+     en vivo y crece */
   .bracket .round-matches {
     grid-template-columns: repeat(2, 1fr);
-    align-items: start;
+    grid-auto-rows: 1fr;
+  }
+
+  .bracket .match-card {
+    height: 100%;
   }
 
   /* Amigos en rejilla que se adapta al ancho */
