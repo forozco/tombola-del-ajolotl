@@ -59,6 +59,7 @@ function computeBracket(results, live = {}) {
       winner,
       live: ev,
       tbd: m.tbd && !ev,
+      utc, // horario efectivo: el oficial de ESPN si ya se conoce el cruce
       date: localDateStr(utc),
       time: localTimeStr(utc),
     }
@@ -303,25 +304,32 @@ function MiniMatch({ match, onGoTo }) {
   )
 }
 
-// Cuenta regresiva al siguiente partido que aún no arranca
-function Countdown({ match }) {
+// Chip dinámico: elige solo el siguiente partido por arrancar y se
+// actualiza en vivo; el formato se adapta a qué tan cerca está
+function Countdown({ matches }) {
   const [ahora, setAhora] = useState(() => Date.now())
   useEffect(() => {
-    const t = setInterval(() => setAhora(Date.now()), 30_000)
+    const t = setInterval(() => setAhora(Date.now()), ES_SIM ? 1_000 : 30_000)
     return () => clearInterval(t)
   }, [])
+  const match = matches.find(
+    (m) => !m.winner && m.live?.state !== 'in' && new Date(m.utc).getTime() > ahora
+  )
+  if (!match) return null
   const diff = new Date(match.utc).getTime() - ahora
-  if (diff <= 0) return null
-  const dias = Math.floor(diff / 86_400_000)
-  const horas = Math.floor((diff % 86_400_000) / 3_600_000)
-  const mins = Math.floor((diff % 3_600_000) / 60_000)
-  const falta = dias >= 1 ? `${dias}d ${horas}h` : horas >= 1 ? `${horas}h ${mins}m` : `${mins} min`
+  const mins = Math.floor(diff / 60_000)
+  const horas = Math.floor(diff / 3_600_000)
+  let falta
+  if (mins < 1) falta = '¡ya casi arranca!'
+  else if (horas < 1) falta = `en ${mins} min`
+  else if (match.date === todayStr()) falta = `hoy · en ${horas}h ${mins % 60}m`
+  else falta = `${fechaCorta(match.date)} · ${match.time} h`
   const home = match.homeTeam ? TEAMS[match.homeTeam] : null
   const away = match.awayTeam ? TEAMS[match.awayTeam] : null
   return (
     <div className="countdown">
-      ⏳ {home ? `${home.flag} ${home.name}` : 'Por definir'} vs{' '}
-      {away ? `${away.flag} ${away.name}` : 'Por definir'} <strong>en {falta}</strong>
+      ⏳ Siguiente: {home ? `${home.flag} ${home.name}` : 'Por definir'} vs{' '}
+      {away ? `${away.flag} ${away.name}` : 'Por definir'} <strong>{falta}</strong>
     </div>
   )
 }
@@ -332,21 +340,19 @@ function Hoy({ bracket, goToLlaves, onPick }) {
   const porFecha = [...bracket.resolved].sort((a, b) =>
     `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)
   )
-  // Hoy: primero los EN VIVO, luego los que vienen, al final los terminados
-  const prioridad = (m) => (m.live?.state === 'in' ? 0 : m.winner || m.live?.state === 'post' ? 2 : 1)
+  // Hoy: solo los EN VIVO flotan hasta arriba; el resto conserva su orden
+  // cronológico (un partido terminado se queda en su lugar, no se hunde)
+  const enVivo = (m) => (m.live?.state === 'in' ? 0 : 1)
   const deHoy = porFecha
     .filter((m) => m.date === hoy)
-    .sort((a, b) => prioridad(a) - prioridad(b))
+    .sort((a, b) => enVivo(a) - enVivo(b))
   const proximos = porFecha.filter((m) => m.date > hoy && !m.winner)
-  const siguiente = porFecha.find(
-    (m) => !m.winner && m.live?.state !== 'in' && new Date(m.utc).getTime() > Date.now()
-  )
   const jugados = porFecha.filter((m) => m.winner && m.date <= hoy).reverse()
   const siguienteFecha = proximos[0]?.date
 
   return (
     <div className="hoy">
-      {siguiente && <Countdown match={siguiente} />}
+      <Countdown matches={porFecha} />
       <h2 className="round-title">📅 Hoy · {fechaLarga(hoy)}</h2>
       {deHoy.length > 0 ? (
         <div className="round-matches">
