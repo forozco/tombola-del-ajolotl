@@ -208,7 +208,7 @@ function computeBracket(results, live = {}, detalles = {}) {
       eliminated.add(m.winner === m.homeTeam ? m.awayTeam : m.homeTeam)
     }
   }
-  const champion = resolved.find((m) => m.id === 'f1').winner
+  const champion = resolved.find((m) => m.id === 'f1')?.winner ?? null
   return { resolved, eliminated, champion }
 }
 
@@ -1027,7 +1027,6 @@ function useResults() {
 
   useEffect(() => {
     if (!hasSupabase || ES_SIM) return
-    let active = true
     refetch()
     const unsubscribe = subscribeResults((payload) => {
       const row = payload.new ?? {}
@@ -1048,14 +1047,11 @@ function useResults() {
         if (row.detalle) setDetalles((prev) => ({ ...prev, [row.match_id]: row.detalle }))
       }
     })
-    return () => {
-      active = false
-      unsubscribe()
-    }
+    return () => unsubscribe()
   }, [])
 
   // Registro automático desde el marcador en vivo: ganador + marcador + detalle
-  const applyLive = (matchId, teamId, marcador, detalle) => {
+  const applyLive = useCallback((matchId, teamId, marcador, detalle) => {
     setResults((prev) => (prev[matchId] === teamId ? prev : { ...prev, [matchId]: teamId }))
     if (detalle) setDetalles((prev) => ({ ...prev, [matchId]: detalle }))
     if (hasSupabase && !ES_SIM) {
@@ -1063,7 +1059,7 @@ function useResults() {
         ({ error }) => error && console.error('Error al sincronizar:', error.message)
       )
     }
-  }
+  }, [])
 
   // Corrección manual (solo modo admin): toca para marcar, re-toca para deshacer
   const pick = (matchId, teamId) => {
@@ -1265,7 +1261,7 @@ export default function App() {
         }
       }
     }
-  }, [bracket, results, detalles])
+  }, [bracket, applyLive])
 
   return (
     <div className="app">

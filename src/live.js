@@ -17,9 +17,20 @@ const ABBR_TO_ID = {
 // Llave estable para emparejar un partido de la app con un evento de ESPN
 export const pairKey = (a, b) => [a, b].sort().join('|')
 
+// Corta la petición si ESPN cuelga la conexión: mejor error rápido y reintento
+// que un poll atorado esperando el TCP timeout del sistema (~2 min).
+const TIMEOUT_MS = 15_000
+
 // Devuelve { 'can|mar': { state, clock, detail, score, shootout, winnerId, utc }, ... }
 export async function fetchLive() {
-  const res = await fetch(SCOREBOARD_URL)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  let res
+  try {
+    res = await fetch(SCOREBOARD_URL, { signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
   if (!res.ok) throw new Error(`ESPN respondió ${res.status}`)
   const data = await res.json()
   const out = {}

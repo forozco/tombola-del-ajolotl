@@ -66,6 +66,11 @@ alter table public.resultados add column if not exists marcador text;
 
 (Sin la columna, la app igual guarda al ganador — solo omite el marcador.)
 
+Si ya tenías la tabla y quieres blindarla contra escrituras basura (útil porque
+la `anon key` es pública), corre el bloque de `alter table ... add constraint
+resultados_match_id_valido / resultados_winner_valido` del [SQL de setup](./supabase-setup.sql).
+Es idempotente: si ya existen los constraints los reemplaza.
+
 ## Créditos
 
 - Ícono de ajolote: [caro-asercion](https://game-icons.net/1x1/caro-asercion/axolotl.html)

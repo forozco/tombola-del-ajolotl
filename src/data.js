@@ -44,24 +44,24 @@ export const OWNER_BY_TEAM = Object.fromEntries(
 // tbd y se corrigen solas con los datos en vivo cuando se confirme el horario)
 export const MATCHES = [
   // Octavos · 4–7 de julio
-  { id: 'o1', round: 0, utc: '2026-07-04T21:00Z', home: { team: 'par' }, away: { team: 'fra' } },
-  { id: 'o2', round: 0, utc: '2026-07-04T17:00Z', home: { team: 'can' }, away: { team: 'mar' } },
-  { id: 'o3', round: 0, utc: '2026-07-06T19:00Z', home: { team: 'por' }, away: { team: 'esp' } },
-  { id: 'o4', round: 0, utc: '2026-07-07T00:00Z', home: { team: 'usa' }, away: { team: 'bel' } },
-  { id: 'o5', round: 0, utc: '2026-07-05T20:00Z', home: { team: 'bra' }, away: { team: 'nor' } },
-  { id: 'o6', round: 0, utc: '2026-07-06T00:00Z', home: { team: 'mex' }, away: { team: 'eng' } },
-  { id: 'o7', round: 0, utc: '2026-07-07T16:00Z', home: { team: 'arg' }, away: { team: 'egy' } },
-  { id: 'o8', round: 0, utc: '2026-07-07T20:00Z', home: { team: 'sui' }, away: { team: 'col' } },
+  { id: 'o1', round: 0, utc: '2026-07-04T21:00:00Z', home: { team: 'par' }, away: { team: 'fra' } },
+  { id: 'o2', round: 0, utc: '2026-07-04T17:00:00Z', home: { team: 'can' }, away: { team: 'mar' } },
+  { id: 'o3', round: 0, utc: '2026-07-06T19:00:00Z', home: { team: 'por' }, away: { team: 'esp' } },
+  { id: 'o4', round: 0, utc: '2026-07-07T00:00:00Z', home: { team: 'usa' }, away: { team: 'bel' } },
+  { id: 'o5', round: 0, utc: '2026-07-05T20:00:00Z', home: { team: 'bra' }, away: { team: 'nor' } },
+  { id: 'o6', round: 0, utc: '2026-07-06T00:00:00Z', home: { team: 'mex' }, away: { team: 'eng' } },
+  { id: 'o7', round: 0, utc: '2026-07-07T16:00:00Z', home: { team: 'arg' }, away: { team: 'egy' } },
+  { id: 'o8', round: 0, utc: '2026-07-07T20:00:00Z', home: { team: 'sui' }, away: { team: 'col' } },
   // Cuartos · 9–11 de julio (horarios oficiales)
-  { id: 'q1', round: 1, utc: '2026-07-09T20:00Z', home: { from: 'o1' }, away: { from: 'o2' } },
-  { id: 'q2', round: 1, utc: '2026-07-10T19:00Z', home: { from: 'o3' }, away: { from: 'o4' } },
-  { id: 'q3', round: 1, utc: '2026-07-11T21:00Z', home: { from: 'o5' }, away: { from: 'o6' } },
-  { id: 'q4', round: 1, utc: '2026-07-12T01:00Z', home: { from: 'o7' }, away: { from: 'o8' } },
+  { id: 'q1', round: 1, utc: '2026-07-09T20:00:00Z', home: { from: 'o1' }, away: { from: 'o2' } },
+  { id: 'q2', round: 1, utc: '2026-07-10T19:00:00Z', home: { from: 'o3' }, away: { from: 'o4' } },
+  { id: 'q3', round: 1, utc: '2026-07-11T21:00:00Z', home: { from: 'o5' }, away: { from: 'o6' } },
+  { id: 'q4', round: 1, utc: '2026-07-12T01:00:00Z', home: { from: 'o7' }, away: { from: 'o8' } },
   // Semifinales · 14–15 de julio (horarios oficiales)
-  { id: 's1', round: 2, utc: '2026-07-14T19:00Z', home: { from: 'q1' }, away: { from: 'q2' } },
-  { id: 's2', round: 2, utc: '2026-07-15T19:00Z', home: { from: 'q3' }, away: { from: 'q4' } },
+  { id: 's1', round: 2, utc: '2026-07-14T19:00:00Z', home: { from: 'q1' }, away: { from: 'q2' } },
+  { id: 's2', round: 2, utc: '2026-07-15T19:00:00Z', home: { from: 'q3' }, away: { from: 'q4' } },
   // Final · 19 de julio
-  { id: 'f1', round: 3, utc: '2026-07-19T19:00Z', tbd: true, home: { from: 's1' }, away: { from: 's2' } },
+  { id: 'f1', round: 3, utc: '2026-07-19T19:00:00Z', tbd: true, home: { from: 's1' }, away: { from: 's2' } },
 ]
 
 export const ROUNDS = ['Octavos', 'Cuartos', 'Semifinal', 'Final']
