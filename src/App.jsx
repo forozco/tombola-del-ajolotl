@@ -43,6 +43,7 @@ const ES_SIM = new URLSearchParams(window.location.search).has('simular')
 const AHORA = () => (ES_SIM ? simNow() : Date.now())
 
 const STORAGE_KEY = 'tombola-ajolotl-v1'
+const DETALLES_KEY = 'tombola-ajolotl-detalles-v1'
 const THEME_KEY = 'tombola-ajolotl-theme'
 
 const MATCH_BY_ID = Object.fromEntries(MATCHES.map((m) => [m.id, m]))
@@ -73,13 +74,15 @@ function localTimeStr(utc) {
   return new Date(utc).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
-function computeBracket(results, live = {}) {
+function computeBracket(results, live = {}, detalles = {}) {
   const resolved = MATCHES.map((m) => {
     const home = slotTeam(m.home, results)
     const away = slotTeam(m.away, results)
     const winner = matchWinner(m.id, results)
-    // Si ESPN ya conoce este cruce, su horario oficial manda sobre el estimado
-    const ev = home && away ? live[pairKey(home, away)] : null
+    // En vivo manda ESPN; si ya no lo sirve, usamos el detalle guardado en
+    // Supabase (goles, marcador, cómo terminó) para no perder nada
+    const evLive = home && away ? live[pairKey(home, away)] : null
+    const ev = evLive ?? detalles[m.id] ?? null
     const utc = ev?.utc ?? m.utc
     return {
       ...m,
@@ -106,6 +109,14 @@ function computeBracket(results, live = {}) {
 function loadResults() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {}
+  } catch {
+    return {}
+  }
+}
+
+function loadDetalles() {
+  try {
+    return JSON.parse(localStorage.getItem(DETALLES_KEY)) ?? {}
   } catch {
     return {}
   }
@@ -878,6 +889,7 @@ function FriendCard({ owner, tag, campeon }) {
 // Estado de resultados: en vivo vía Supabase si hay credenciales, si no, local
 function useResults() {
   const [results, setResults] = useState(ES_SIM ? {} : loadResults)
+  const [detalles, setDetalles] = useState(ES_SIM ? {} : loadDetalles)
   const [online, setOnline] = useState(false)
 
   useEffect(() => {
@@ -886,22 +898,39 @@ function useResults() {
   }, [results])
 
   useEffect(() => {
+    if (ES_SIM) return
+    localStorage.setItem(DETALLES_KEY, JSON.stringify(detalles))
+  }, [detalles])
+
+  useEffect(() => {
     if (!hasSupabase || ES_SIM) return
     let active = true
     fetchResults()
-      .then((remote) => {
+      .then(({ results: remote, detalles: remoteDet }) => {
         if (!active) return
         setResults(remote)
+        setDetalles(remoteDet)
         setOnline(true)
       })
       .catch(() => setOnline(false))
     const unsubscribe = subscribeResults((payload) => {
-      setResults((prev) => {
-        const next = { ...prev }
-        if (payload.eventType === 'DELETE') delete next[payload.old.match_id]
-        else next[payload.new.match_id] = payload.new.winner
-        return next
-      })
+      const row = payload.new ?? {}
+      const oldId = payload.old?.match_id
+      if (payload.eventType === 'DELETE') {
+        setResults((prev) => {
+          const next = { ...prev }
+          delete next[oldId]
+          return next
+        })
+        setDetalles((prev) => {
+          const next = { ...prev }
+          delete next[oldId]
+          return next
+        })
+      } else {
+        setResults((prev) => ({ ...prev, [row.match_id]: row.winner }))
+        if (row.detalle) setDetalles((prev) => ({ ...prev, [row.match_id]: row.detalle }))
+      }
     })
     return () => {
       active = false
@@ -909,11 +938,12 @@ function useResults() {
     }
   }, [])
 
-  // Registro automático desde el marcador en vivo: ganador + marcador final
-  const applyLive = (matchId, teamId, marcador) => {
+  // Registro automático desde el marcador en vivo: ganador + marcador + detalle
+  const applyLive = (matchId, teamId, marcador, detalle) => {
     setResults((prev) => (prev[matchId] === teamId ? prev : { ...prev, [matchId]: teamId }))
+    if (detalle) setDetalles((prev) => ({ ...prev, [matchId]: detalle }))
     if (hasSupabase && !ES_SIM) {
-      saveResult(matchId, teamId, marcador).then(
+      saveResult(matchId, teamId, marcador, detalle).then(
         ({ error }) => error && console.error('Error al sincronizar:', error.message)
       )
     }
@@ -934,7 +964,7 @@ function useResults() {
     })
   }
 
-  return { results, applyLive, pick, online }
+  return { results, detalles, applyLive, pick, online }
 }
 
 // Cadencia del sondeo según el momento: pegado al partido, casi en vivo
@@ -1024,8 +1054,24 @@ function marcadorTexto(m) {
   return txt
 }
 
+// Snapshot permanente del partido terminado (para guardar en Supabase):
+// marcador, cómo terminó y todos los goles con goleador y minuto
+function detalleDe(m) {
+  const ev = m.live
+  if (!ev) return null
+  return {
+    state: 'post',
+    utc: ev.utc,
+    score: ev.score,
+    shootout: ev.shootout ?? {},
+    finish: ev.finish,
+    goals: ev.goals ?? [],
+    winnerId: ev.winnerId,
+  }
+}
+
 export default function App() {
-  const { results, applyLive, pick, online } = useResults()
+  const { results, detalles, applyLive, pick, online } = useResults()
   const live = useLive()
   const [themeMode, setThemeMode] = useState(loadThemeMode)
   const [sysDark, setSysDark] = useState(systemPrefersDark)
@@ -1067,17 +1113,26 @@ export default function App() {
         ? 'Tema: claro'
         : 'Tema: oscuro'
 
-  const bracket = useMemo(() => computeBracket(results, live), [results, live])
+  const bracket = useMemo(
+    () => computeBracket(results, live, detalles),
+    [results, live, detalles]
+  )
   const champOwner = bracket.champion ? OWNER_BY_TEAM[bracket.champion] : null
 
-  // Cuando un partido termina según ESPN, registra ganador y marcador solito
+  // Cuando un partido termina según ESPN, registra ganador, marcador y el
+  // detalle con los goles (una sola vez, al detectar el final o si aún no
+  // se habían guardado los goles)
   useEffect(() => {
     for (const m of bracket.resolved) {
-      if (m.live?.state === 'post' && m.live.winnerId && results[m.id] !== m.live.winnerId) {
-        applyLive(m.id, m.live.winnerId, marcadorTexto(m))
+      const evEnVivo = m.live && m.live !== detalles[m.id] // ev proveniente de ESPN
+      if (evEnVivo && m.live.state === 'post' && m.live.winnerId) {
+        const faltanGoles = (detalles[m.id]?.goals?.length ?? 0) < (m.live.goals?.length ?? 0)
+        if (results[m.id] !== m.live.winnerId || faltanGoles) {
+          applyLive(m.id, m.live.winnerId, marcadorTexto(m), detalleDe(m))
+        }
       }
     }
-  }, [bracket, results])
+  }, [bracket, results, detalles])
 
   return (
     <div className="app">

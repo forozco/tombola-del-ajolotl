@@ -6,11 +6,13 @@ create table public.resultados (
   match_id text primary key,
   winner text not null,
   marcador text, -- p. ej. "2-1", "1-1 (pen 4-2)", "2-1 (t. extra)"
+  detalle jsonb, -- snapshot completo: goles (goleador y minuto), cómo terminó
   updated_at timestamptz not null default now()
 );
 
--- Si la tabla ya existía sin la columna marcador, este ALTER la agrega
+-- Si la tabla ya existía sin estas columnas, estos ALTER las agregan
 alter table public.resultados add column if not exists marcador text;
+alter table public.resultados add column if not exists detalle jsonb;
 
 -- Cualquiera con el link de la app puede leer y escribir (es una app entre amigos)
 alter table public.resultados enable row level security;

@@ -11,9 +11,22 @@ export const supabase = url && key ? createClient(url, key) : null
 export const hasSupabase = Boolean(supabase)
 
 export async function fetchResults() {
-  const { data, error } = await supabase.from('resultados').select('match_id, winner')
-  if (error) throw error
-  return Object.fromEntries(data.map((r) => [r.match_id, r.winner]))
+  // Intenta traer también el detalle (goles, marcador, cómo terminó); si la
+  // columna aún no existe, cae a lo básico (ganador) sin romper
+  let { data, error } = await supabase
+    .from('resultados')
+    .select('match_id, winner, marcador, detalle')
+  if (error) {
+    ;({ data, error } = await supabase.from('resultados').select('match_id, winner'))
+    if (error) throw error
+  }
+  const results = {}
+  const detalles = {}
+  for (const r of data) {
+    results[r.match_id] = r.winner
+    if (r.detalle) detalles[r.match_id] = r.detalle
+  }
+  return { results, detalles }
 }
 
 export function subscribeResults(onChange) {
@@ -28,14 +41,23 @@ export function subscribeResults(onChange) {
   return () => supabase.removeChannel(channel)
 }
 
-// Guarda ganador y marcador final; si la columna marcador aún no existe
-// en la tabla, reintenta guardando solo el ganador para no perder el registro
-export async function saveResult(matchId, winner, marcador) {
-  if (marcador) {
-    const res = await supabase.from('resultados').upsert({ match_id: matchId, winner, marcador })
-    if (!res.error) return res
+// Guarda el registro completo del partido (ganador + marcador + detalle con
+// los goles). Si alguna columna aún no existe en la tabla, va cayendo a una
+// versión más simple para nunca perder al menos al ganador.
+export async function saveResult(matchId, winner, marcador, detalle) {
+  const intentos = [
+    { match_id: matchId, winner, marcador, detalle },
+    { match_id: matchId, winner, marcador },
+    { match_id: matchId, winner },
+  ]
+  let last
+  for (const fila of intentos) {
+    // Omite claves undefined para no forzar columnas inexistentes
+    const limpio = Object.fromEntries(Object.entries(fila).filter(([, v]) => v !== undefined))
+    last = await supabase.from('resultados').upsert(limpio)
+    if (!last.error) return last
   }
-  return supabase.from('resultados').upsert({ match_id: matchId, winner })
+  return last
 }
 
 // Solo lo usa el modo admin de emergencia (?admin en la URL)
