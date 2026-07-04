@@ -1106,6 +1106,81 @@ button,
   animation: score-pop var(--dur-slow) var(--ease-spring);
 }
 
+/* ── Barra de posesión ── */
+/* Discreta por diseño: pilas muy delgadas, tipografía chica, sin competir
+   con el marcador. Fade-in al aparecer, width animada al actualizar. */
+.possession {
+  padding: 10px 12px 12px;
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+  animation: poss-in 0.4s var(--ease-out) both;
+}
+
+@keyframes poss-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.poss-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.poss-pct {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0;
+  color: var(--text);
+  text-transform: none;
+}
+
+.poss-track {
+  display: flex;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--muted) 15%, transparent);
+}
+
+.poss-home,
+.poss-away {
+  height: 100%;
+  transition: width 0.6s var(--ease-out);
+  will-change: width;
+}
+
+.poss-home {
+  background: var(--accent);
+}
+
+.poss-away {
+  background: color-mix(in srgb, var(--accent) 22%, var(--muted));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .possession {
+    animation: none;
+  }
+  .poss-home,
+  .poss-away {
+    transition: none;
+  }
+}
+
 @keyframes score-pop {
   0% {
     transform: scale(1);

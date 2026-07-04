@@ -5,6 +5,7 @@ import { fetchLive, pairKey } from './live.js'
 
 import { simLive, simNow } from './simulacion.js'
 import { FLAG_URLS } from './banderas.js'
+import { haptic } from './haptics.js'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 // Aviso de nueva versión: el service worker detecta un deploy nuevo y muestra
@@ -19,10 +20,22 @@ function ActualizacionDisponible() {
     <div className="update-toast" role="alert">
       <span>Hay una versión nueva de la app</span>
       <div className="update-actions">
-        <button className="update-later" onClick={() => setNeedRefresh(false)}>
+        <button
+          className="update-later"
+          onClick={() => {
+            haptic.soft()
+            setNeedRefresh(false)
+          }}
+        >
           Ahora no
         </button>
-        <button className="update-now" onClick={() => updateServiceWorker(true)}>
+        <button
+          className="update-now"
+          onClick={() => {
+            haptic.success()
+            updateServiceWorker(true)
+          }}
+        >
           Actualizar
         </button>
       </div>
@@ -40,6 +53,9 @@ function PullToRefresh({ onRefresh }) {
   const startY = useRef(null)
   const distRef = useRef(0)
   const refreshingRef = useRef(false)
+  // Recuerda si ya cruzaste el umbral en este arrastre: haptic solo al PASAR
+  // por primera vez, no en cada frame que estés por encima
+  const cruzadoRef = useRef(false)
   const UMBRAL = 66
   const MAX = 88
 
@@ -49,6 +65,7 @@ function PullToRefresh({ onRefresh }) {
         window.scrollY <= 0 && e.touches.length === 1 && !refreshingRef.current
           ? e.touches[0].clientY
           : null
+      cruzadoRef.current = false
     }
     const onMove = (e) => {
       if (startY.current == null) return
@@ -66,6 +83,14 @@ function PullToRefresh({ onRefresh }) {
       const d = Math.min(dy * 0.5, MAX) // resistencia elástica
       distRef.current = d
       setDist(d)
+      // Haptic-tick al llegar por primera vez al umbral en este arrastre
+      // (imita el "clic" del pull-to-refresh nativo de iOS)
+      if (d >= UMBRAL && !cruzadoRef.current) {
+        cruzadoRef.current = true
+        haptic.medium()
+      } else if (d < UMBRAL) {
+        cruzadoRef.current = false
+      }
       if (d > 4 && e.cancelable) e.preventDefault() // frena el scroll mientras se jala
     }
     const onEnd = () => {
@@ -83,6 +108,7 @@ function PullToRefresh({ onRefresh }) {
           setRefreshing(false)
           distRef.current = 0
           setDist(0)
+          haptic.success() // confirmación al terminar el refresh
         })
       } else {
         distRef.current = 0
@@ -474,6 +500,34 @@ function MatchCard({ match, champion, meta, onPick }) {
       {meta && <GolesDe match={match} teamId={match.homeTeam} />}
       <TeamRow teamId={match.awayTeam} match={match} champion={champion} onPick={onPick} />
       {meta && <GolesDe match={match} teamId={match.awayTeam} />}
+      {meta && <PossessionBar match={match} />}
+    </div>
+  )
+}
+
+// Barra de posesión: dato de "sabor" bajo el marcador, muy discreto. Solo
+// aparece cuando ESPN la trae (en vivo tras los primeros minutos) o cuando
+// el partido ya terminó y quedó en el snapshot. Fade-in al aparecer.
+function PossessionBar({ match }) {
+  const p = match.live?.possession
+  if (!p || !match.homeTeam || !match.awayTeam) return null
+  const homeName = TEAMS[match.homeTeam]?.name
+  const awayName = TEAMS[match.awayTeam]?.name
+  return (
+    <div
+      className="possession"
+      role="img"
+      aria-label={`Posesión: ${homeName} ${p.home}%, ${awayName} ${p.away}%`}
+    >
+      <div className="poss-header">
+        <span className="poss-pct">{p.home}%</span>
+        <span className="poss-label">Posesión</span>
+        <span className="poss-pct">{p.away}%</span>
+      </div>
+      <div className="poss-track">
+        <div className="poss-home" style={{ width: `${p.home}%` }} />
+        <div className="poss-away" style={{ width: `${p.away}%` }} />
+      </div>
     </div>
   )
 }
@@ -570,7 +624,13 @@ function MiniMatch({ match, onGoTo, bracket, abierto }) {
   }
 
   return (
-    <button className={`mini-match${abierto ? ' abierto' : ''}`} onClick={onGoTo}>
+    <button
+      className={`mini-match${abierto ? ' abierto' : ''}`}
+      onClick={() => {
+        haptic.soft()
+        onGoTo?.()
+      }}
+    >
       <span className="mini-chevron" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M9 6l6 6-6 6" />
@@ -682,7 +742,14 @@ function LiveTicker({ bracket, onVer }) {
         const sh = m.live.shootout ?? {}
         const pens = Object.values(sh).some((v) => v != null)
         return (
-          <button key={m.id} className="ticker-chip" onClick={() => onVer(m)}>
+          <button
+            key={m.id}
+            className="ticker-chip"
+            onClick={() => {
+              haptic.soft()
+              onVer(m)
+            }}
+          >
             <span className="live-dot" />
             <Bandera teamId={m.homeTeam} />{' '}
             {pens
@@ -1099,7 +1166,7 @@ function pollDelay(data) {
 const TITULO_ORIGINAL = document.title
 let tituloTimer
 function avisoDeGol(teamId, ev) {
-  navigator.vibrate?.([200, 100, 200])
+  haptic.goal()
   const ids = Object.keys(ev.score)
   const marcador = `${ev.score[ids[0]]}-${ev.score[ids[1]]}`
   document.title = `⚽ ¡GOOOL de ${TEAMS[teamId].name}! ${marcador}`
@@ -1275,7 +1342,10 @@ export default function App() {
           </div>
           <button
             className="theme-btn"
-            onClick={() => setThemeMode(siguienteTema[themeMode])}
+            onClick={() => {
+              haptic.soft()
+              setThemeMode(siguienteTema[themeMode])
+            }}
             aria-label={tituloTema}
             title={tituloTema}
           >
@@ -1320,13 +1390,31 @@ export default function App() {
         className="tabs"
         style={{ '--active-tab-index': ['hoy', 'llaves', 'amigos'].indexOf(tab) }}
       >
-        <button className={tab === 'hoy' ? 'active' : ''} onClick={() => setTab('hoy')}>
+        <button
+          className={tab === 'hoy' ? 'active' : ''}
+          onClick={() => {
+            if (tab !== 'hoy') haptic.soft()
+            setTab('hoy')
+          }}
+        >
           Hoy
         </button>
-        <button className={tab === 'llaves' ? 'active' : ''} onClick={() => setTab('llaves')}>
+        <button
+          className={tab === 'llaves' ? 'active' : ''}
+          onClick={() => {
+            if (tab !== 'llaves') haptic.soft()
+            setTab('llaves')
+          }}
+        >
           El Camino
         </button>
-        <button className={tab === 'amigos' ? 'active' : ''} onClick={() => setTab('amigos')}>
+        <button
+          className={tab === 'amigos' ? 'active' : ''}
+          onClick={() => {
+            if (tab !== 'amigos') haptic.soft()
+            setTab('amigos')
+          }}
+        >
           Coonstl
         </button>
       </nav>
@@ -1355,13 +1443,19 @@ export default function App() {
             >
               <button
                 className={vista === 'cuadro' ? 'active' : ''}
-                onClick={() => setVista('cuadro')}
+                onClick={() => {
+                  if (vista !== 'cuadro') haptic.soft()
+                  setVista('cuadro')
+                }}
               >
                 <IconBracket /> Bracket
               </button>
               <button
                 className={vista === 'lista' ? 'active' : ''}
-                onClick={() => setVista('lista')}
+                onClick={() => {
+                  if (vista !== 'lista') haptic.soft()
+                  setVista('lista')
+                }}
               >
                 <IconLista /> Lista
               </button>
