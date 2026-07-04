@@ -1366,9 +1366,9 @@ export default function App() {
 
       <footer className="footer">
         <p>
-          Goles, marcadores y resultados llegan en tiempo real desde el marcador oficial de{' '}
-          <strong>ESPN</strong>. Durante un partido se actualiza cada pocos segundos y el ganador
-          avanza solo de ronda — aquí nadie captura nada a mano.
+          Marcadores, goles y resultados en vivo desde <strong>ESPN</strong>. Todo se actualiza
+          solo cada pocos segundos y el ganador avanza de ronda al instante — aquí nadie captura
+          nada a mano.
         </p>
         <span className="footer-tz">Horarios en tu hora local ({zonaHoraria()})</span>
         <span className="footer-credito">Hecho con ❤️ por el fer</span>
