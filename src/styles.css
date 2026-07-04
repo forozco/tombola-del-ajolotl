@@ -209,6 +209,25 @@ button,
   transform: rotate(-14deg);
 }
 
+/* Botones del header (campana + tema) lado a lado */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Campana con notificaciones activas: se pinta con el acento */
+.notif-btn.on {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.notif-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .sync-pill {
   font-size: 0.7rem;
   font-weight: 700;

@@ -51,3 +51,29 @@ create policy "borrar" on public.resultados for delete using (true);
 
 -- Habilitar realtime: los cambios se transmiten a todos los teléfonos al instante
 alter publication supabase_realtime add table public.resultados;
+
+-- ── Notificaciones push ──────────────────────────────────────────────────
+
+-- Suscripciones Web Push de cada dispositivo. Cualquiera puede darse de
+-- alta o de baja con la anon key, pero NO hay policy de SELECT: solo el
+-- service role (la función api/notify.js en Vercel) puede leerlas para
+-- enviar. Así nadie puede listar los endpoints ajenos.
+create table if not exists public.push_subs (
+  endpoint text primary key,
+  sub jsonb not null,
+  created_at timestamptz not null default now()
+);
+alter table public.push_subs enable row level security;
+drop policy if exists "push_subs_alta" on public.push_subs;
+drop policy if exists "push_subs_baja" on public.push_subs;
+create policy "push_subs_alta" on public.push_subs for insert with check (true);
+create policy "push_subs_baja" on public.push_subs for delete using (true);
+
+-- Snapshot del scoreboard entre corridas del cron, para detectar qué cambió
+-- (arrancó / gol / final). Sin policies: solo el service role la toca.
+create table if not exists public.notify_state (
+  id text primary key,
+  snapshot jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.notify_state enable row level security;

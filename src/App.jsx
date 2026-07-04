@@ -11,6 +11,7 @@ import { marcadorTexto, detalleDe } from './lib/matches.js'
 import { useResults } from './hooks/useResults.js'
 import { useLive } from './hooks/useLive.js'
 import { useTheme } from './hooks/useTheme.js'
+import { useNotificaciones } from './hooks/useNotificaciones.js'
 import { useRuta, rutaDe } from './hooks/useRuta.js'
 import { useScrollPorRuta } from './hooks/useScrollPorRuta.js'
 import { ActualizacionDisponible } from './components/ActualizacionDisponible.jsx'
@@ -28,6 +29,7 @@ export default function App() {
   const { results, detalles, applyLive, pick, refetch } = useResults()
   const { live, refetch: refetchLive } = useLive()
   const { themeMode, cyclearTema, tituloTema } = useTheme()
+  const notif = useNotificaciones()
 
   // Pestaña y vista viven en la URL (/, /camino, /camino/lista, /amigos):
   // un refresh o un link compartido caen en la misma vista. El scroll se
@@ -98,6 +100,7 @@ export default function App() {
         themeMode={themeMode}
         cyclearTema={cyclearTema}
         tituloTema={tituloTema}
+        notif={notif}
       />
       <ChampionBanner championTeamId={bracket.champion} />
       <TabBar tab={tab} setTab={setTab} />

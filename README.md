@@ -55,6 +55,41 @@ el modo en vivo:
 Reinicia `npm run dev` y el header debe decir **🟢 En vivo**. En Vercel, agrega esas
 mismas dos variables en **Settings → Environment Variables** y haz redeploy.
 
+## Notificaciones push (goles, inicio y final)
+
+Con la campana del header cada quien activa avisos en su dispositivo, incluso con la
+app cerrada. **En iPhone/iPad requiere iOS 16.4+ y la PWA instalada en la pantalla de
+inicio** (Compartir → Agregar a inicio); en Android y desktop funciona directo en el
+navegador. En `npm run dev` el service worker está apagado: pruébalo con
+`npm run build && npm run preview` o ya desplegado.
+
+Setup (una sola vez):
+
+1. Corre de nuevo [`supabase-setup.sql`](./supabase-setup.sql) en el SQL Editor
+   (agrega las tablas `push_subs` y `notify_state`; es idempotente).
+2. Genera el par de llaves VAPID: `npx web-push generate-vapid-keys`.
+3. En Vercel → **Settings → Environment Variables** agrega:
+
+   | Variable | Valor |
+   | --- | --- |
+   | `VITE_VAPID_PUBLIC_KEY` | la pública del paso 2 |
+   | `VAPID_PRIVATE_KEY` | la privada del paso 2 (¡nunca al repo!) |
+   | `VAPID_SUBJECT` | `mailto:tu-correo@ejemplo.com` |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → `service_role` |
+   | `NOTIFY_SECRET` | cualquier string aleatorio largo |
+
+4. Programa el disparo de `/api/notify` cada minuto:
+   - **Plan Pro de Vercel**: agrega a `vercel.json`
+     `"crons": [{ "path": "/api/notify", "schedule": "* * * * *" }]`
+     y define `CRON_SECRET` en las env vars (Vercel lo manda como Bearer solo).
+   - **Plan Hobby** (los crons solo corren 1 vez al día): usa un cron externo
+     gratuito como [cron-job.org](https://cron-job.org) apuntando a
+     `https://TU-APP.vercel.app/api/notify?secret=TU_NOTIFY_SECRET` cada minuto.
+
+La función compara el marcador de ESPN contra la corrida anterior y avisa
+solo lo nuevo: 🟢 arrancó el partido, ⚽ gol (con marcador, minuto y goleador)
+y 🏁 final (con penales/tiempo extra si aplicó).
+
 ## Nota sobre la tabla
 
 Si creaste la tabla `resultados` antes de que existiera la columna `marcador`, corre

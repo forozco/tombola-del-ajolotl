@@ -1,7 +1,7 @@
 {
   "name": "tombola-del-ajolotl",
   "private": true,
-  "version": "1.9.3",
+  "version": "1.10.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,8 @@
     "@supabase/supabase-js": "^2.110.0",
     "flag-icons": "^7.5.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
