@@ -16,13 +16,17 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 )
 
-// Oculta la splash universal una vez montada la app (con un mínimo visible
-// para que se alcance a apreciar), con desvanecido suave
+// Oculta la splash una vez montada la app. Si es una recarga dentro de la
+// sesión (pull-to-refresh), la splash venía oculta por CSS: solo se quita.
 const splash = document.getElementById('splash')
 if (splash) {
-  const ocultar = () => {
-    splash.classList.add('hidden')
-    setTimeout(() => splash.remove(), 500)
+  if (document.documentElement.classList.contains('no-splash')) {
+    splash.remove()
+  } else {
+    const ocultar = () => {
+      splash.classList.add('hidden')
+      setTimeout(() => splash.remove(), 500)
+    }
+    window.requestAnimationFrame(() => setTimeout(ocultar, 500))
   }
-  window.requestAnimationFrame(() => setTimeout(ocultar, 500))
 }

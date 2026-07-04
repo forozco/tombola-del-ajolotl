@@ -52,6 +52,11 @@
         opacity: 0;
         pointer-events: none;
       }
+      /* En recargas dentro de la misma sesión (p. ej. pull-to-refresh) no se
+         muestra: la splash es solo al abrir la app */
+      html.no-splash #splash {
+        display: none;
+      }
       #splash img {
         width: 92px;
         height: 92px;
@@ -75,6 +80,17 @@
         }
       }
     </style>
+    <!-- Marca la app como "ya abierta" en esta sesión. En recargas posteriores
+         (pull-to-refresh) se salta la splash; solo aparece en el arranque. -->
+    <script>
+      try {
+        if (sessionStorage.getItem('ajolotl-abierta')) {
+          document.documentElement.classList.add('no-splash')
+        } else {
+          sessionStorage.setItem('ajolotl-abierta', '1')
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
