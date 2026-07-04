@@ -389,7 +389,7 @@ function TeamRow({ teamId, match, champion, onPick }) {
       </span>
       <span className="team-name">{team.name}</span>
       <OwnerChip owner={owner} small />
-      {score != null && <span className="score">{score}</span>}
+      {score != null && <span key={score} className="score">{score}</span>}
       {match.winner && (
         <span className="check">{isWinner ? (champion === teamId ? '★' : '✓') : ''}</span>
       )}
@@ -591,7 +591,7 @@ function MiniMatch({ match, onGoTo, bracket, abierto }) {
           )}
         </span>
         {marcador ? (
-          <strong className="mini-score">{marcador}</strong>
+          <strong key={marcador} className="mini-score">{marcador}</strong>
         ) : (
           <span className="mini-vs"> vs </span>
         )}
@@ -1349,7 +1349,10 @@ export default function App() {
         {tab === 'hoy' && <Hoy bracket={bracket} goToLlaves={() => setTab('llaves')} onPick={pick} />}
         {tab === 'llaves' && (
           <>
-            <div className="vista-toggle">
+            <div
+              className="vista-toggle"
+              style={{ '--active-vista-index': vista === 'cuadro' ? 0 : 1 }}
+            >
               <button
                 className={vista === 'cuadro' ? 'active' : ''}
                 onClick={() => setVista('cuadro')}
