@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react'
 import { OWNERS, OWNER_BY_TEAM, ROUNDS, TEAMS } from '../data.js'
 import { FIGHTERS } from '../sf.js'
-import { fechaCorta, todayStr } from '../lib/dates.js'
+import { fechaCorta } from '../lib/dates.js'
 import { finishLabel } from '../lib/matches.js'
 import { AHORA, ES_BONUS, ES_SIM } from '../lib/modes.js'
 import { haptic } from '../haptics.js'
@@ -121,18 +121,43 @@ function LiveVsCard({ match }) {
   )
 }
 
+// Ventana de "aftermath" tras el pitazo final: el panel WIN/K.O. sigue arriba
+// del roster durante este tiempo antes de ceder a NEXT FIGHT del siguiente
+// partido. Se mide desde el kickoff porque ESPN no da un timestamp de fin —
+// asumimos que el partido dura como máximo 2h 30min (regular + tiempo extra
+// + penales) y damos 30 min extra de "sabor" post-partido.
+const AFTERMATH_GRACE_MS = 30 * 60 * 1000
+const MATCH_MAX_DURATION_MS = 2.5 * 60 * 60 * 1000
+const AFTERMATH_TOTAL_MS = MATCH_MAX_DURATION_MS + AFTERMATH_GRACE_MS
+
+// Chequea si el partido terminó recientemente (dentro de la ventana aftermath).
+// Devuelve false para partidos sin ganador o cuyo kickoff fue hace más de la
+// ventana total (habitual para partidos de días anteriores).
+function isRecentAftermath(match, now) {
+  if (!match.winner) return false
+  const kickoff = new Date(match.utc).getTime()
+  return now - kickoff < AFTERMATH_TOTAL_MS
+}
+
 function LiveVsPanel({ bracket }) {
+  // Reloj propio para expirar el aftermath sin depender del polling de useLive
+  // (que puede no correr si ESPN dice que ya no hay live). Solo tickea cuando
+  // hay un candidato aftermath — en cualquier otro caso, dormido.
+  const [now, setNow] = useState(() => AHORA())
   const enVivo = bracket.resolved.filter((m) => m.live?.state === 'in')
-  // "Aftermath": el partido terminado más reciente del día de hoy. Se muestra
-  // cuando NO hay ningún partido en vivo (si hay live, ese manda; no queremos
-  // apilar). El día de hoy se usa como filtro para no arrastrar partidos de
-  // días anteriores — el bracket de "El Camino" los sigue mostrando.
-  const hoy = todayStr()
+  // "Aftermath": el partido terminado más reciente dentro de la ventana de
+  // 30 min tras el pitazo final. Se muestra cuando NO hay ningún partido en
+  // vivo (si hay live, ese manda). Cuando expira, cede al NEXT FIGHT panel.
   const aftermath = enVivo.length
     ? null
     : bracket.resolved
-        .filter((m) => m.winner && m.date === hoy)
+        .filter((m) => isRecentAftermath(m, now))
         .sort((a, b) => new Date(b.utc) - new Date(a.utc))[0]
+  useEffect(() => {
+    if (!aftermath) return undefined
+    const t = setInterval(() => setNow(AHORA()), ES_SIM ? 200 : 30_000)
+    return () => clearInterval(t)
+  }, [aftermath])
   const cards = [...enVivo, ...(aftermath ? [aftermath] : [])]
   if (!cards.length) return null
   return (
@@ -192,20 +217,21 @@ function NextFighter({ teamId, side }) {
 }
 
 function NextFightPanel({ bracket }) {
-  // Prioridad: si hay live o aftermath del día, este panel no aparece
-  // (LiveVsPanel se encarga de esos estados).
+  // Prioridad: si hay live o aftermath reciente, este panel no aparece
+  // (LiveVsPanel se encarga de esos estados). El aftermath expira 30 min
+  // después del pitazo final, momento en que este panel toma el relevo.
   const hayLive = bracket.resolved.some((m) => m.live?.state === 'in')
-  const hoy = todayStr()
-  const hayAftermath = bracket.resolved.some((m) => m.winner && m.date === hoy)
   const [now, setNow] = useState(() => AHORA())
+  const hayAftermath = bracket.resolved.some((m) => isRecentAftermath(m, now))
 
   useEffect(() => {
-    if (hayLive || hayAftermath) return undefined
-    // En modo sim (?simular) el reloj avanza mucho más rápido — actualizamos
-    // más seguido para que el countdown se sienta en tiempo real
+    if (hayLive) return undefined
+    // Tickea siempre (aún durante aftermath) para detectar cuando expira la
+    // ventana y este panel puede tomar el relevo con el countdown. En modo
+    // sim (?simular) el reloj avanza mucho más rápido — más seguido.
     const t = setInterval(() => setNow(AHORA()), ES_SIM ? 200 : 1_000)
     return () => clearInterval(t)
-  }, [hayLive, hayAftermath])
+  }, [hayLive])
 
   if (hayLive || hayAftermath) return null
 
