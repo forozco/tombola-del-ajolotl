@@ -179,6 +179,28 @@ function GolesDe({ match, teamId }) {
   )
 }
 
+// Amonestaciones de un equipo: amarillas y rojas con minuto y jugador. La
+// segunda amarilla se muestra como amarilla+roja apiladas (ESPN lo marca en
+// type.text como "Yellow-Red Card"). Silencio total cuando no hay tarjetas.
+function TarjetasDe({ match, teamId }) {
+  const cards = match.live?.cards?.filter((c) => c.teamId === teamId) ?? []
+  if (!cards.length) return null
+  return (
+    <div className="tarjetas">
+      {cards.map((c, i) => (
+        <span key={i} className="tarjeta">
+          <span
+            className={`card-icon ${c.color}${c.secondYellow ? ' second' : ''}`}
+            aria-label={c.color === 'red' ? 'Tarjeta roja' : 'Tarjeta amarilla'}
+          />
+          <span className="gol-min">{c.minute}</span>{' '}
+          <span className="tarjeta-jugador">{c.player}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
 export function MatchCard({ match, champion, bracket, meta, onPick }) {
   const homeOwner = match.homeTeam ? OWNER_BY_TEAM[match.homeTeam] : null
   const awayOwner = match.awayTeam ? OWNER_BY_TEAM[match.awayTeam] : null
@@ -254,8 +276,10 @@ export function MatchCard({ match, champion, bracket, meta, onPick }) {
       ) : null}
       <TeamRow teamId={match.homeTeam} match={match} champion={champion} onPick={onPick} />
       {meta && <GolesDe match={match} teamId={match.homeTeam} />}
+      {meta && <TarjetasDe match={match} teamId={match.homeTeam} />}
       <TeamRow teamId={match.awayTeam} match={match} champion={champion} onPick={onPick} />
       {meta && <GolesDe match={match} teamId={match.awayTeam} />}
+      {meta && <TarjetasDe match={match} teamId={match.awayTeam} />}
       {meta && <PossessionBar match={match} />}
     </div>
   )

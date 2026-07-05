@@ -793,6 +793,70 @@ button,
   color: var(--muted);
 }
 
+/* Amonestaciones: mismo bloque visual que los goles, con un cuadrito de
+   color (amarilla/roja) en lugar de un icono grande. Se muestra debajo del
+   renglón del equipo cuando meta=true. */
+.tarjetas {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 12px 10px 50px;
+  background: color-mix(in srgb, var(--muted) 3%, transparent);
+}
+
+.tarjeta {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tarjeta-jugador {
+  color: var(--muted);
+}
+
+/* Rectángulo pequeño estilo tarjeta de árbitro. Amarilla FIFA #F5C518,
+   roja #E23636. La 'second' (doble amarilla) muestra la roja con un canto
+   amarillo detrás — cómo la simboliza broadcasts y sofascore. */
+.card-icon {
+  display: inline-block;
+  width: 8px;
+  height: 11px;
+  border-radius: 1.5px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+}
+
+.card-icon.yellow {
+  background: #f5c518;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.card-icon.red {
+  background: #e23636;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.card-icon.red.second {
+  position: relative;
+  background: #e23636;
+}
+
+.card-icon.red.second::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 11px;
+  border-radius: 1.5px;
+  background: #f5c518;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  top: -3px;
+  left: -3px;
+  z-index: -1;
+}
+
 .countdown {
   display: flex;
   flex-direction: column;
