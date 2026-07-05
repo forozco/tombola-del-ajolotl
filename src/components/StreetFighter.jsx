@@ -72,7 +72,11 @@ function LiveVsCard({ match }) {
         <div className="sf-live-center">
           <div className="sf-live-vs-word">VS</div>
           <div className="sf-live-score">
-            {homeScore} <span className="sf-live-dash">–</span> {awayScore}
+            {/* key={score} fuerza remount al cambiar de valor → dispara la
+                animación score-pop que ya tenemos definida en styles.css */}
+            <span key={homeScore} className="sf-live-num">{homeScore}</span>
+            <span className="sf-live-dash">–</span>
+            <span key={awayScore} className="sf-live-num">{awayScore}</span>
           </div>
         </div>
         <LiveVsFighter teamId={match.awayTeam} side="away" />

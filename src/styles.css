@@ -1880,6 +1880,17 @@ body {
   font-variant-numeric: tabular-nums;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
   letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+/* Cada número del marcador remonta al cambiar (key={score}) y se anima
+   con score-pop (definido en styles.css cerca de .score) — el bump con
+   flash en rosa dura ~380ms. Suficiente para que se sienta el gol. */
+.sf-live-num {
+  display: inline-block;
+  animation: score-pop var(--dur-slow) var(--ease-spring);
 }
 
 .sf-live-dash {
