@@ -9,7 +9,8 @@
 
 import { OWNERS, OWNER_BY_TEAM, ROUNDS, TEAMS } from '../data.js'
 import { FIGHTERS } from '../sf.js'
-import { fechaCorta } from '../lib/dates.js'
+import { fechaCorta, todayStr } from '../lib/dates.js'
+import { finishLabel } from '../lib/matches.js'
 import { Bandera } from './Bandera.jsx'
 
 // ── Panel de pelea EN VIVO estilo arcade ──────────────────────────────────
@@ -18,17 +19,34 @@ import { Bandera } from './Bandera.jsx'
 // escenario del anfitrión, con banderas, marcador y minuto. Si hay más de
 // un partido en vivo, se apilan.
 
-function LiveVsFighter({ teamId, side }) {
+function LiveVsFighter({ teamId, match, side }) {
   const owner = OWNER_BY_TEAM[teamId]
   const f = FIGHTERS[owner.id]
   const team = TEAMS[teamId]
+  const isWinner = Boolean(match.winner) && match.winner === teamId
+  const isLoser = Boolean(match.winner) && match.winner !== teamId
+  // El perdedor va con su retrato golpeado del continue screen. El ganador
+  // se queda con su stance de pelea (sigue vivo, celebrando). El sprite KO
+  // es frontal (no direccional) — no se debe flipear aunque esté a la
+  // derecha; solo el stance se voltea para que se enfrenten mirándose.
+  const spriteSrc = isLoser ? f.ko : f.stance
+  const shouldFlip = side === 'away' && !isLoser
+  const cls = `sf-live-side sf-live-${side}${isWinner ? ' winner' : ''}${isLoser ? ' loser' : ''}`
   return (
-    <div className={`sf-live-side sf-live-${side}`}>
-      <img
-        className={`sf-live-sprite${f.pixelated ? ' pixelated' : ''}${side === 'away' ? ' flipped' : ''}`}
-        src={f.stance}
-        alt={f.fighter}
-      />
+    <div className={cls}>
+      <div className="sf-live-sprite-wrap">
+        <img
+          className={`sf-live-sprite${f.pixelated ? ' pixelated' : ''}${shouldFlip ? ' flipped' : ''}`}
+          src={spriteSrc}
+          alt={f.fighter}
+        />
+        {isLoser && <span className="sf-live-stamp ko">K.O.</span>}
+        {isWinner && (
+          <span className="sf-live-stamp win">
+            {match.id === 'f1' ? '★' : 'WIN'}
+          </span>
+        )}
+      </div>
       <div className="sf-live-meta">
         <span className="sf-live-team">
           <Bandera teamId={teamId} /> {team?.name ?? ''}
@@ -49,28 +67,41 @@ function LiveVsCard({ match }) {
   const ev = match.live
   const sh = ev?.shootout ?? {}
   const enPenales = Object.values(sh).some((v) => v != null)
-  const clockLabel = enPenales
-    ? `PENALES ${sh[match.homeTeam] ?? 0}-${sh[match.awayTeam] ?? 0}`
-    : ev?.halftime
-      ? 'MEDIO TIEMPO'
-      : `FIGHT! · ${ev?.clock ?? ''}`
+  const isPost = Boolean(match.winner)
+  // Label del top-bar: 'FIGHT!' en vivo, 'FINAL · ...' cuando ya terminó.
+  // El finishLabel de matches.js ya arma "Final · penales 4-2 para Marruecos",
+  // "Final · en tiempo extra", etc. Se mayusculiza para el look arcade.
+  const clockLabel = isPost
+    ? (finishLabel(match) ?? 'FINAL').toUpperCase()
+    : enPenales
+      ? `PENALES ${sh[match.homeTeam] ?? 0}-${sh[match.awayTeam] ?? 0}`
+      : ev?.halftime
+        ? 'MEDIO TIEMPO'
+        : `FIGHT! · ${ev?.clock ?? ''}`
+  // Palabra central: VS mientras juega, K.O. al terminar, ★ CHAMPION ★ en
+  // la gran final.
+  const centerWord = isPost
+    ? match.id === 'f1'
+      ? '★ CHAMPION ★'
+      : 'K.O.'
+    : 'VS'
   const homeScore = ev?.score?.[match.homeTeam] ?? 0
   const awayScore = ev?.score?.[match.awayTeam] ?? 0
   return (
     <div
-      className="sf-live-card"
+      className={`sf-live-card${isPost ? ' finished' : ''}`}
       style={{ '--sf-live-stage': `url(${stageFighter.stage})` }}
     >
       <div className="sf-live-topbar">
-        <span className="sf-live-clock">
+        <span className={`sf-live-clock${isPost ? ' post' : ''}`}>
           <span className="live-dot" /> {clockLabel}
         </span>
         <span className="sf-live-stage-label">{stageFighter.city}</span>
       </div>
       <div className="sf-live-arena">
-        <LiveVsFighter teamId={match.homeTeam} side="home" />
+        <LiveVsFighter teamId={match.homeTeam} match={match} side="home" />
         <div className="sf-live-center">
-          <div className="sf-live-vs-word">VS</div>
+          <div className={`sf-live-vs-word${isPost ? ' ko' : ''}`}>{centerWord}</div>
           <div className="sf-live-score">
             {/* key={score} fuerza remount al cambiar de valor → dispara la
                 animación score-pop que ya tenemos definida en styles.css */}
@@ -79,7 +110,7 @@ function LiveVsCard({ match }) {
             <span key={awayScore} className="sf-live-num">{awayScore}</span>
           </div>
         </div>
-        <LiveVsFighter teamId={match.awayTeam} side="away" />
+        <LiveVsFighter teamId={match.awayTeam} match={match} side="away" />
       </div>
     </div>
   )
@@ -87,10 +118,21 @@ function LiveVsCard({ match }) {
 
 function LiveVsPanel({ bracket }) {
   const enVivo = bracket.resolved.filter((m) => m.live?.state === 'in')
-  if (!enVivo.length) return null
+  // "Aftermath": el partido terminado más reciente del día de hoy. Se muestra
+  // cuando NO hay ningún partido en vivo (si hay live, ese manda; no queremos
+  // apilar). El día de hoy se usa como filtro para no arrastrar partidos de
+  // días anteriores — el bracket de "El Camino" los sigue mostrando.
+  const hoy = todayStr()
+  const aftermath = enVivo.length
+    ? null
+    : bracket.resolved
+        .filter((m) => m.winner && m.date === hoy)
+        .sort((a, b) => new Date(b.utc) - new Date(a.utc))[0]
+  const cards = [...enVivo, ...(aftermath ? [aftermath] : [])]
+  if (!cards.length) return null
   return (
     <div className="sf-live-vs">
-      {enVivo.map((m) => (
+      {cards.map((m) => (
         <LiveVsCard key={m.id} match={m} />
       ))}
     </div>

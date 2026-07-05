@@ -1809,6 +1809,11 @@ body {
   min-width: 0;
 }
 
+.sf-live-sprite-wrap {
+  position: relative;
+  display: inline-block;
+}
+
 .sf-live-sprite {
   width: 84px;
   height: 108px;
@@ -1817,9 +1822,108 @@ body {
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.8));
 }
 
-/* El peleador de la derecha va volteado para que se enfrenten */
+/* El peleador de la derecha va volteado para que se enfrenten (solo mientras
+   se juega; los sprites KO son frontales y no se flipean). */
 .sf-live-sprite.flipped {
   transform: scaleX(-1);
+}
+
+/* Sellos WIN / K.O. sobre el sprite al terminar el partido. Arcade look:
+   pixel-y, texto con doble sombra roja/dorada para que se lea contra el
+   stage de fondo. */
+.sf-live-stamp {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-8deg);
+  padding: 3px 10px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  background: rgba(0, 0, 0, 0.75);
+  animation: sf-stamp-in 0.5s var(--ease-spring) both;
+  pointer-events: none;
+}
+
+.sf-live-stamp.ko {
+  color: #ff4d4f;
+  text-shadow: 0 0 8px rgba(255, 77, 79, 0.7);
+}
+
+.sf-live-stamp.win {
+  color: var(--sf-accent, #ffd54d);
+  text-shadow: 0 0 10px rgba(255, 213, 77, 0.7), 1px 1px 0 #b71c1c;
+}
+
+@keyframes sf-stamp-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) rotate(-8deg) scale(1.6);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) rotate(-8deg) scale(1);
+  }
+}
+
+/* El perdedor se atenúa un pelo — su equipo perdió, no compite con la
+   celebración del ganador */
+.sf-live-side.loser .sf-live-sprite {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.9)) grayscale(0.15);
+}
+
+.sf-live-side.loser .sf-live-team,
+.sf-live-side.loser .sf-live-char {
+  opacity: 0.7;
+}
+
+/* El ganador tiene un halo dorado sutil */
+.sf-live-side.winner .sf-live-sprite {
+  filter: drop-shadow(0 0 12px rgba(255, 213, 77, 0.6))
+    drop-shadow(0 3px 6px rgba(0, 0, 0, 0.8));
+}
+
+/* Cuando el partido terminó, el punto rojo del clock deja de pulsar y se
+   pone en color mudo (ya no es 'en vivo') */
+.sf-live-clock.post {
+  color: var(--sf-cyan, #6de5ff);
+}
+
+.sf-live-clock.post .live-dot {
+  background: var(--sf-cyan, #6de5ff);
+  animation: none;
+}
+
+/* La palabra central pasa de VS parpadeante a K.O. estático rojo. Con un
+   pulso inicial dramático cuando aparece. */
+.sf-live-vs-word.ko {
+  color: #ff4d4f;
+  animation: sf-ko-in 0.6s var(--ease-spring) both;
+  text-shadow: 0 0 10px rgba(255, 77, 79, 0.7), 2px 2px 0 #4a0000;
+}
+
+@keyframes sf-ko-in {
+  0% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-live-stamp,
+  .sf-live-vs-word.ko {
+    animation: none;
+  }
 }
 
 .sf-live-meta {
