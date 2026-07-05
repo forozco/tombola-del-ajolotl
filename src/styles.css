@@ -55,6 +55,10 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Sin swipe left/right de historial (atrás/adelante) para sentir app
+     nativa: cubre Chrome Android y el two-finger swipe de trackpad. El swipe
+     de borde en iOS PWA se bloquea aparte en main.jsx (no respeta CSS). */
+  overscroll-behavior-x: none;
 }
 
 body {
@@ -65,6 +69,7 @@ body {
   /* pan-x pan-y = permite deslizar (scroll horizontal y vertical) pero
      bloquea el pellizco de dos dedos y el doble-tap para hacer zoom */
   touch-action: pan-x pan-y;
+  overscroll-behavior-x: none;
 }
 
 /* Todo lo tappeable: sin retraso de 300ms, y con un pequeño press-down
