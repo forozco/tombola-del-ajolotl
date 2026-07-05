@@ -2589,6 +2589,358 @@ body {
   }
 }
 
+/* ── Bonus Stage · easter egg del auto ─────────────────────────────────────
+   Trigger discreto en el NEXT FIGHT panel + modal fullscreen con el bonus
+   stage clásico de Street Fighter II. Mecánica en BonusStage.jsx; aquí solo
+   el look arcade. */
+
+/* Botón joystick en la esquina superior derecha del NEXT FIGHT panel */
+.sf-bonus-trigger {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--sf-cyan);
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--sf-cyan);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.sf-bonus-trigger:hover,
+.sf-bonus-trigger:focus-visible {
+  opacity: 1;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--sf-cyan) 60%, transparent);
+}
+
+.sf-bonus-trigger:active {
+  transform: scale(0.9);
+}
+
+/* Overlay fullscreen del bonus stage */
+.sf-bonus-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  animation: sf-bonus-in 0.28s var(--ease-out) both;
+}
+
+@keyframes sf-bonus-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sf-bonus-scene {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  padding-top: max(env(safe-area-inset-top), 20px);
+  padding-bottom: max(env(safe-area-inset-bottom), 20px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* Escenario: gris industrial de la fábrica del bonus stage clásico, con
+     grid de asfalto sutil */
+  background:
+    linear-gradient(180deg, #2b2b3a 0%, #4a3b3b 65%, #22171f 100%),
+    repeating-linear-gradient(90deg, transparent 0 20px, rgba(0, 0, 0, 0.2) 20px 21px);
+  background-blend-mode: multiply;
+  color: var(--sf-text, #fff);
+  font-family: 'Press Start 2P', monospace;
+}
+
+/* HUD arcade estilo cabinete: 3 bloques con label + valor */
+.sf-bonus-hud {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.sf-bonus-hud-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 4px;
+  border: 2px solid var(--sf-line, #4a3b3b);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+}
+
+.sf-bonus-hud-label {
+  font-size: 0.45rem;
+  letter-spacing: 0.12em;
+  color: var(--sf-dim, #9a8a8a);
+}
+
+.sf-bonus-hud-value {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+.sf-bonus-time {
+  color: var(--sf-cyan);
+  text-shadow: 0 0 4px color-mix(in srgb, var(--sf-cyan) 60%, transparent);
+}
+
+.sf-bonus-hits {
+  color: var(--sf-accent, #ffd54d);
+  text-shadow: 0 0 4px color-mix(in srgb, var(--sf-accent) 60%, transparent);
+}
+
+.sf-bonus-score {
+  color: #ff4d4f;
+  text-shadow: 0 0 4px rgba(255, 77, 79, 0.6);
+}
+
+.sf-bonus-title {
+  text-align: center;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  color: var(--sf-accent, #ffd54d);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--sf-accent) 55%, transparent),
+    2px 2px 0 var(--sf-red, #b71c1c);
+  animation: sf-blink 1.2s steps(2, jump-none) infinite;
+}
+
+.sf-bonus-subtitle {
+  text-align: center;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  color: var(--sf-cyan);
+  margin-top: -6px;
+}
+
+/* Área de juego: piso + Ryu + auto */
+.sf-bonus-arena {
+  position: relative;
+  flex: 1;
+  min-height: 240px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 40px;
+  /* Piso con línea de horizonte */
+  border-bottom: 3px solid rgba(0, 0, 0, 0.5);
+}
+
+.sf-bonus-ryu {
+  position: absolute;
+  left: 8%;
+  bottom: 40px;
+  width: 96px;
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8));
+  z-index: 2;
+  /* Ryu se anima con el mismo idle sutil del NEXT FIGHT */
+  animation: sf-next-idle 2s ease-in-out infinite;
+}
+
+/* El "hitzone" es el botón que envuelve al auto: cubre toda su área. En
+   click, propagamos coords del pointer para spawnear la chispa donde tocó. */
+.sf-bonus-hitzone {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  z-index: 1;
+  /* Sin el press-down del botón global para que sea el auto quien tiemble */
+  transition: none;
+}
+
+.sf-bonus-hitzone:not(:disabled):active {
+  transform: none;
+}
+
+.sf-bonus-car {
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.7));
+  transition: transform 0.15s var(--ease-out);
+}
+
+.sf-bonus-car.shake {
+  animation: sf-bonus-shake 0.18s ease-out;
+}
+
+@keyframes sf-bonus-shake {
+  0% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(-3px, 2px) rotate(-1.5deg); }
+  40% { transform: translate(4px, -1px) rotate(1.5deg); }
+  60% { transform: translate(-2px, 2px) rotate(-0.8deg); }
+  80% { transform: translate(2px, -2px) rotate(0.8deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* El auto se va inclinando conforme aumenta el daño */
+.sf-bonus-car[data-phase='2'] svg { transform: rotate(-1deg); }
+.sf-bonus-car[data-phase='3'] svg { transform: rotate(-2.5deg) translateY(2px); }
+.sf-bonus-car[data-phase='4'] svg { transform: rotate(-4deg) translateY(4px); filter: brightness(0.85); }
+
+/* Chispa "POW" que aparece en el punto del click */
+.sf-bonus-spark {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: sf-bonus-spark 0.5s ease-out forwards;
+  z-index: 3;
+}
+
+@keyframes sf-bonus-spark {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4) rotate(-15deg);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.4) rotate(6deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.1) rotate(0deg);
+  }
+}
+
+/* Barra de daño estilo lifebar del arcade: amarillo → rojo al fill */
+.sf-bonus-damage-bar {
+  height: 12px;
+  border: 2px solid var(--sf-line, #4a3b3b);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sf-bonus-damage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd54d 0%, #ff4d4f 100%);
+  transition: width 0.25s var(--ease-out);
+}
+
+/* Overlay de fin de juego (Cleared / Time Up) */
+.sf-bonus-endgame {
+  position: absolute;
+  inset: 30% 16px auto 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 3px solid var(--sf-accent);
+  border-radius: 8px;
+  text-align: center;
+  z-index: 10;
+  animation: sf-bonus-endgame-in 0.4s var(--ease-spring) both;
+  box-shadow: 0 0 30px color-mix(in srgb, var(--sf-accent) 40%, transparent);
+}
+
+@keyframes sf-bonus-endgame-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sf-bonus-endgame-title {
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  color: var(--sf-accent);
+  text-shadow: 2px 2px 0 var(--sf-red);
+}
+
+.sf-bonus-endgame-title.cleared {
+  color: #4caf50;
+  text-shadow: 2px 2px 0 #1b5e20;
+}
+
+.sf-bonus-endgame-title.timeup {
+  color: #ff4d4f;
+  text-shadow: 2px 2px 0 #4a0000;
+}
+
+.sf-bonus-endgame-bonus,
+.sf-bonus-endgame-score,
+.sf-bonus-endgame-best {
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: var(--sf-cyan);
+}
+
+.sf-bonus-endgame-best {
+  color: var(--sf-accent);
+  animation: sf-blink 0.8s steps(2, jump-none) infinite;
+}
+
+/* Footer con instrucción/exit */
+.sf-bonus-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.sf-bonus-instruction {
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  color: var(--sf-dim, #9a8a8a);
+}
+
+.sf-bonus-exit {
+  padding: 8px 14px;
+  border: 2px solid var(--sf-accent, #ffd54d);
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--sf-accent, #ffd54d);
+  font-family: inherit;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sf-bonus-exit:active {
+  transform: scale(0.94);
+  background: var(--sf-accent);
+  color: #000;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-bonus-title,
+  .sf-bonus-endgame-best,
+  .sf-bonus-ryu,
+  .sf-bonus-car.shake {
+    animation: none;
+  }
+}
+
 @keyframes sf-pulse {
   50% {
     box-shadow: 0 0 16px color-mix(in srgb, var(--sf-gold) 55%, transparent);
