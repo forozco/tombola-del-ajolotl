@@ -13,6 +13,7 @@
 
 import { TEAMS, OWNER_BY_TEAM, ROUNDS, POZO } from '../data.js'
 import { finishLabel, venueLabel } from '../lib/matches.js'
+import { localTimeStr } from '../lib/dates.js'
 import { ES_ADMIN } from '../lib/modes.js'
 import { Bandera } from './Bandera.jsx'
 import { OwnerChip } from './OwnerChip.jsx'
@@ -134,19 +135,27 @@ const ALTERED_LABEL = {
   postponed: { icon: '⚠', text: 'REPROGRAMADO' },
   suspended: { icon: '⏸', text: 'SUSPENDIDO' },
   canceled: { icon: '✗', text: 'CANCELADO' },
+  rescheduled: { icon: '⏱', text: 'HORARIO ACTUALIZADO' },
 }
 
 function AlteredBadge({ match }) {
   const alt = match.live?.altered
   if (!alt) return null
   const meta = ALTERED_LABEL[alt.kind] ?? { icon: '⚠', text: alt.kind.toUpperCase() }
+  // Para "rescheduled" (inferido por bracket.js cuando el kickoff de ESPN
+  // difiere del hardcoded), armamos la descripción con las dos horas locales
+  // para que el usuario vea de dónde a dónde se movió.
+  const detail =
+    alt.kind === 'rescheduled' && alt.originalUtc && alt.newUtc
+      ? `${localTimeStr(alt.originalUtc)} h → ${localTimeStr(alt.newUtc)} h`
+      : alt.description
   return (
     <div className={`altered-bar ${alt.kind}`} role="status">
       <span className="altered-icon" aria-hidden="true">
         {meta.icon}
       </span>
       <span className="altered-text">{meta.text}</span>
-      {alt.description && <span className="altered-detail">· {alt.description}</span>}
+      {detail && <span className="altered-detail">· {detail}</span>}
     </div>
   )
 }

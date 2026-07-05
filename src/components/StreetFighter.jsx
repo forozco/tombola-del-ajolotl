@@ -73,6 +73,7 @@ const SF_ALTERED_LABEL = {
   postponed: 'REPROGRAMADO',
   suspended: 'MATCH PAUSED',
   canceled: 'CANCELADO',
+  rescheduled: 'HORARIO MOVIDO',
 }
 
 function LiveVsCard({ match }) {

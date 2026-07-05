@@ -30,6 +30,12 @@ export function matchWinner(matchId, results) {
   return w && (w === home || w === away) ? w : null
 }
 
+// Delta mínimo entre kickoff de ESPN y kickoff hardcoded para considerarlo
+// una reprogramación. Debajo del umbral es ruido (segundos, minutos por la
+// forma que ESPN redondea). 15 min captura un retraso real (México 18:00 →
+// 19:00 se ve; un ajuste de un par de minutos, no).
+const RESCHEDULE_THRESHOLD_MS = 15 * 60_000
+
 // Estado derivado principal de la app: cada partido resuelto con sus equipos,
 // su ganador, su evento en vivo (o snapshot si ya terminó), horario efectivo
 // y el conjunto de equipos eliminados en cascada.
@@ -43,12 +49,24 @@ export function computeBracket(results, live = {}, detalles = {}) {
     const evLive = home && away ? live[pairKey(home, away)] : null
     const ev = evLive ?? detalles[m.id] ?? null
     const utc = ev?.utc ?? m.utc
+    // Inferir "reprogramado" cuando ESPN devuelve un kickoff distinto al
+    // oficial hardcoded y el partido aún no terminó. Cubre el caso común en
+    // el que ESPN mueve el partido silenciosamente (actualiza event.date pero
+    // deja el status como STATUS_SCHEDULED) — sin este heurístico, la hora
+    // cambia en la UI pero el usuario no ve señal de que fue movido.
+    const deltaKickoff =
+      ev?.utc && m.utc ? Math.abs(new Date(ev.utc) - new Date(m.utc)) : 0
+    const noTerminado = !winner && ev?.state !== 'post'
+    const evConAltered =
+      ev && !ev.altered && noTerminado && deltaKickoff > RESCHEDULE_THRESHOLD_MS
+        ? { ...ev, altered: { kind: 'rescheduled', originalUtc: m.utc, newUtc: ev.utc } }
+        : ev
     return {
       ...m,
       homeTeam: home,
       awayTeam: away,
       winner,
-      live: ev,
+      live: evConAltered,
       tbd: m.tbd && !ev,
       utc, // horario efectivo: el oficial de ESPN si ya se conoce el cruce
       date: localDateStr(utc),
