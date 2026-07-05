@@ -13,6 +13,7 @@
 
 import { TEAMS, OWNER_BY_TEAM, ROUNDS, POZO } from '../data.js'
 import { finishLabel, venueLabel } from '../lib/matches.js'
+import { localTimeStr } from '../lib/dates.js'
 import { ES_ADMIN } from '../lib/modes.js'
 import { Bandera } from './Bandera.jsx'
 import { OwnerChip } from './OwnerChip.jsx'
@@ -124,6 +125,41 @@ function PossessionBar({ match }) {
   )
 }
 
+// Badge que anuncia una alteración del partido reportada por ESPN: retrasado
+// (empieza más tarde el mismo día), reprogramado (cambió a otra fecha),
+// suspendido (paró a mitad y se reanudará) o cancelado (no se juega). No se
+// muestra nada si ESPN dice que todo es normal. La `description` viene de
+// ESPN ("Rain Delay", "Postponed", etc.) — cuando existe, la exponemos.
+const ALTERED_LABEL = {
+  delayed: { icon: '⏱', text: 'INICIO RETRASADO' },
+  postponed: { icon: '⚠', text: 'REPROGRAMADO' },
+  suspended: { icon: '⏸', text: 'SUSPENDIDO' },
+  canceled: { icon: '✗', text: 'CANCELADO' },
+  rescheduled: { icon: '⏱', text: 'HORARIO ACTUALIZADO' },
+}
+
+function AlteredBadge({ match }) {
+  const alt = match.live?.altered
+  if (!alt) return null
+  const meta = ALTERED_LABEL[alt.kind] ?? { icon: '⚠', text: alt.kind.toUpperCase() }
+  // Para "rescheduled" (inferido por bracket.js cuando el kickoff de ESPN
+  // difiere del hardcoded), armamos la descripción con las dos horas locales
+  // para que el usuario vea de dónde a dónde se movió.
+  const detail =
+    alt.kind === 'rescheduled' && alt.originalUtc && alt.newUtc
+      ? `${localTimeStr(alt.originalUtc)} h → ${localTimeStr(alt.newUtc)} h`
+      : alt.description
+  return (
+    <div className={`altered-bar ${alt.kind}`} role="status">
+      <span className="altered-icon" aria-hidden="true">
+        {meta.icon}
+      </span>
+      <span className="altered-text">{meta.text}</span>
+      {detail && <span className="altered-detail">· {detail}</span>}
+    </div>
+  )
+}
+
 // Lista de goles de un equipo, mostrada justo debajo de su renglón cuando
 // meta=true (vista expandida). Con minuto, goleador y flags (penal / autogol).
 function GolesDe({ match, teamId }) {
@@ -181,6 +217,7 @@ export function MatchCard({ match, champion, bracket, meta, onPick }) {
           )}
         </>
       )}
+      <AlteredBadge match={match} />
       {enVivo && (
         <div className="live-bar">
           <span className="live-dot" />
