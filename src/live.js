@@ -26,6 +26,22 @@ export const pairKey = (a, b) => [a, b].sort().join('|')
 // que un poll atorado esperando el TCP timeout del sistema (~2 min).
 const TIMEOUT_MS = 15_000
 
+// Estados alterados de un partido que ESPN reporta con un `type.name` fuera
+// del set normal (SCHEDULED / IN_PROGRESS / FINAL). Mapean a una categoría
+// semántica que la UI usa para pintar un badge con contexto.
+//  - postponed → cambiado a otra fecha (los datos usan la nueva utc)
+//  - delayed   → el inicio se atrasó (mismo día, otra hora)
+//  - suspended → detenido a mitad de partido, se reanudará
+//  - canceled  → cancelado / abandonado sin reprogramar
+function alteredStatus(typeName, description) {
+  const name = String(typeName ?? '')
+  if (/POSTPONED/i.test(name)) return { kind: 'postponed', description }
+  if (/DELAY/i.test(name)) return { kind: 'delayed', description }
+  if (/SUSPENDED/i.test(name)) return { kind: 'suspended', description }
+  if (/(CANCELED|ABANDONED|FORFEIT)/i.test(name)) return { kind: 'canceled', description }
+  return null
+}
+
 // Extrae la posesión % de un partido del endpoint summary. Falla en silencio si
 // ESPN no la devuelve todavía (los primeros minutos), o si la forma cambia:
 // mejor no mostrar nada que mostrar basura.
@@ -82,6 +98,7 @@ export async function fetchLive() {
     if (!homeId || !awayId) continue
     const state = comp.status?.type?.state // pre | in | post
     const shortDetail = comp.status?.type?.shortDetail
+    const altered = alteredStatus(comp.status?.type?.name, comp.status?.type?.description)
     const enPenales = home.shootoutScore != null || away.shootoutScore != null
     let winnerId = null
     let finish = null // ft (90 min) | aet (tiempo extra) | pens (penales)
@@ -125,6 +142,7 @@ export async function fetchLive() {
       finish,
       goals,
       venue,
+      altered,
     }
   }
 

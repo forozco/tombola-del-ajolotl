@@ -124,6 +124,33 @@ function PossessionBar({ match }) {
   )
 }
 
+// Badge que anuncia una alteración del partido reportada por ESPN: retrasado
+// (empieza más tarde el mismo día), reprogramado (cambió a otra fecha),
+// suspendido (paró a mitad y se reanudará) o cancelado (no se juega). No se
+// muestra nada si ESPN dice que todo es normal. La `description` viene de
+// ESPN ("Rain Delay", "Postponed", etc.) — cuando existe, la exponemos.
+const ALTERED_LABEL = {
+  delayed: { icon: '⏱', text: 'INICIO RETRASADO' },
+  postponed: { icon: '⚠', text: 'REPROGRAMADO' },
+  suspended: { icon: '⏸', text: 'SUSPENDIDO' },
+  canceled: { icon: '✗', text: 'CANCELADO' },
+}
+
+function AlteredBadge({ match }) {
+  const alt = match.live?.altered
+  if (!alt) return null
+  const meta = ALTERED_LABEL[alt.kind] ?? { icon: '⚠', text: alt.kind.toUpperCase() }
+  return (
+    <div className={`altered-bar ${alt.kind}`} role="status">
+      <span className="altered-icon" aria-hidden="true">
+        {meta.icon}
+      </span>
+      <span className="altered-text">{meta.text}</span>
+      {alt.description && <span className="altered-detail">· {alt.description}</span>}
+    </div>
+  )
+}
+
 // Lista de goles de un equipo, mostrada justo debajo de su renglón cuando
 // meta=true (vista expandida). Con minuto, goleador y flags (penal / autogol).
 function GolesDe({ match, teamId }) {
@@ -181,6 +208,7 @@ export function MatchCard({ match, champion, bracket, meta, onPick }) {
           )}
         </>
       )}
+      <AlteredBadge match={match} />
       {enVivo && (
         <div className="live-bar">
           <span className="live-dot" />

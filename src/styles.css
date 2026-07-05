@@ -1142,6 +1142,48 @@ button,
   color: var(--muted);
 }
 
+/* Badge de estado alterado del partido (retrasado, reprogramado, suspendido,
+   cancelado). Se pinta arriba del live-bar, con acento ámbar para que el
+   ojo lo capture antes que la información normal del partido. */
+.altered-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #d97706;
+}
+
+.altered-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.altered-text {
+  text-transform: uppercase;
+}
+
+.altered-detail {
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+/* Suspendido a mitad de partido: rojo saturado — hay un juego en curso que
+   se detuvo (más urgencia que un retraso pre-match). */
+.altered-bar.suspended {
+  color: #dc2626;
+}
+
+/* Cancelado: gris apagado, ya no hay expectativa. */
+.altered-bar.canceled {
+  color: var(--muted);
+}
+
 /* Punto rojo de "en vivo": estático por defecto (color = en vivo) */
 .live-dot {
   width: 8px;

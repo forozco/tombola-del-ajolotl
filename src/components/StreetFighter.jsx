@@ -65,6 +65,16 @@ function LiveVsFighter({ teamId, match, side }) {
   )
 }
 
+// Etiquetas arcade para los estados alterados que ESPN reporta. Reemplazan
+// el label FIGHT!/FINAL en el top-bar cuando el partido no está en curso
+// normal. Se muestran en mayúsculas monoespaciadas para conservar el look.
+const SF_ALTERED_LABEL = {
+  delayed: 'INICIO RETRASADO',
+  postponed: 'REPROGRAMADO',
+  suspended: 'MATCH PAUSED',
+  canceled: 'CANCELADO',
+}
+
 function LiveVsCard({ match }) {
   if (!match.homeTeam || !match.awayTeam) return null
   const homeOwner = OWNER_BY_TEAM[match.homeTeam]
@@ -73,10 +83,12 @@ function LiveVsCard({ match }) {
   const sh = ev?.shootout ?? {}
   const enPenales = Object.values(sh).some((v) => v != null)
   const isPost = Boolean(match.winner)
-  // Label del top-bar: 'FIGHT!' en vivo, 'FINAL · ...' cuando ya terminó.
-  // El finishLabel de matches.js ya arma "Final · penales 4-2 para Marruecos",
-  // "Final · en tiempo extra", etc. Se mayusculiza para el look arcade.
-  const clockLabel = isPost
+  const altered = ev?.altered
+  // Label del top-bar: si ESPN dice que el partido está alterado, ese texto
+  // gana ("REPROGRAMADO", "SUSPENDIDO"...). Si no, FIGHT!/FINAL como siempre.
+  const clockLabel = altered
+    ? SF_ALTERED_LABEL[altered.kind] ?? altered.kind.toUpperCase()
+    : isPost
     ? (finishLabel(match) ?? 'FINAL').toUpperCase()
     : enPenales
       ? `PENALES ${sh[match.homeTeam] ?? 0}-${sh[match.awayTeam] ?? 0}`
