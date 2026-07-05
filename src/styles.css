@@ -1158,7 +1158,8 @@ button,
 }
 
 .altered-icon {
-  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
   line-height: 1;
 }
 

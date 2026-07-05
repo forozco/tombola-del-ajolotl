@@ -17,7 +17,7 @@ import { localTimeStr } from '../lib/dates.js'
 import { ES_ADMIN } from '../lib/modes.js'
 import { Bandera } from './Bandera.jsx'
 import { OwnerChip } from './OwnerChip.jsx'
-import { IconPin } from './Icons.jsx'
+import { IconPin, IconClock, IconWarning, IconPause, IconX } from './Icons.jsx'
 
 // Renglón de equipo dentro de la card: bandera + nombre + chip del amigo +
 // marcador (si aplica) + ✓/★ si ganó. En modo admin, el renglón es clicable
@@ -131,17 +131,18 @@ function PossessionBar({ match }) {
 // muestra nada si ESPN dice que todo es normal. La `description` viene de
 // ESPN ("Rain Delay", "Postponed", etc.) — cuando existe, la exponemos.
 const ALTERED_LABEL = {
-  delayed: { icon: '⏱', text: 'INICIO RETRASADO' },
-  postponed: { icon: '⚠', text: 'REPROGRAMADO' },
-  suspended: { icon: '⏸', text: 'SUSPENDIDO' },
-  canceled: { icon: '✗', text: 'CANCELADO' },
-  rescheduled: { icon: '⏱', text: 'HORARIO ACTUALIZADO' },
+  delayed: { Icon: IconClock, text: 'INICIO RETRASADO' },
+  postponed: { Icon: IconWarning, text: 'REPROGRAMADO' },
+  suspended: { Icon: IconPause, text: 'SUSPENDIDO' },
+  canceled: { Icon: IconX, text: 'CANCELADO' },
+  rescheduled: { Icon: IconClock, text: 'HORARIO ACTUALIZADO' },
 }
 
 function AlteredBadge({ match }) {
   const alt = match.live?.altered
   if (!alt) return null
-  const meta = ALTERED_LABEL[alt.kind] ?? { icon: '⚠', text: alt.kind.toUpperCase() }
+  const meta = ALTERED_LABEL[alt.kind] ?? { Icon: IconWarning, text: alt.kind.toUpperCase() }
+  const { Icon } = meta
   // Para "rescheduled" (inferido por bracket.js cuando el kickoff de ESPN
   // difiere del hardcoded), armamos la descripción con las dos horas locales
   // para que el usuario vea de dónde a dónde se movió.
@@ -151,8 +152,8 @@ function AlteredBadge({ match }) {
       : alt.description
   return (
     <div className={`altered-bar ${alt.kind}`} role="status">
-      <span className="altered-icon" aria-hidden="true">
-        {meta.icon}
+      <span className="altered-icon">
+        <Icon />
       </span>
       <span className="altered-text">{meta.text}</span>
       {detail && <span className="altered-detail">· {detail}</span>}
