@@ -58,3 +58,24 @@ export function IconLista() {
     </svg>
   )
 }
+
+// Pin de ubicación (mapa): acompaña el nombre del estadio en la MatchCard.
+// Tamaño pequeño (12px) para que se integre con el texto muted sin dominar.
+export function IconPin() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="12"
+      height="12"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 22s-7-7-7-13a7 7 0 0 1 14 0c0 6-7 13-7 13z" />
+      <circle cx="12" cy="9" r="2.5" />
+    </svg>
+  )
+}

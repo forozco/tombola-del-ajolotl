@@ -102,6 +102,16 @@ export async function fetchLive() {
         ownGoal: Boolean(d.ownGoal),
         penalty: Boolean(d.penaltyKick),
       }))
+    // Estadio: ESPN lo entrega en competitions[0].venue. Se conserva el
+    // nombre (fullName) y la ciudad como fallback. Cuando no viene (a veces
+    // en partidos muy futuros o data parcial) queda null y la UI lo omite.
+    const venueRaw = comp?.venue
+    const venue = venueRaw
+      ? {
+          name: venueRaw.fullName ?? null,
+          city: venueRaw.address?.city ?? null,
+        }
+      : null
     const key = pairKey(homeId, awayId)
     eventIdByKey[key] = event.id
     out[key] = {
@@ -114,6 +124,7 @@ export async function fetchLive() {
       winnerId,
       finish,
       goals,
+      venue,
     }
   }
 

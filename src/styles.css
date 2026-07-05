@@ -569,6 +569,31 @@ button,
   color: var(--muted);
 }
 
+/* Estadio del partido — capa 3 (flavor/contexto). Va justo bajo el meta
+   (ronda + hora) con un pin de ubicación como marcador visual. Chico y
+   muted por diseño: se ve pero no compite con el marcador ni con los
+   equipos. Si ESPN no da venue, el componente lo omite. */
+.venue-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+  /* Nombres largos ("Rose Bowl Stadium") no fuerzan ancho más grande que
+     la card en columnas angostas */
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.venue-tag svg {
+  color: var(--accent);
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
 .today-empty {
   background: var(--card);
   border: 1px dashed var(--border);

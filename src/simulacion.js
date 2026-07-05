@@ -90,6 +90,30 @@ function simPosesion(m, tSeg) {
   return { home, away: 100 - home }
 }
 
+// Estadios FIFA-oficiales del Mundial 2026 asignados por equipo anfitrión
+// (para dar variedad al demo). Nomenclatura FIFA "clean venue": los nombres
+// comerciales (MetLife, SoFi, AT&T, etc.) se reemplazan por "[Ciudad] Stadium"
+// durante el torneo. Es lo que ESPN devolverá en producción, así que el demo
+// se ve idéntico al real.
+const STADIUMS = {
+  can: { name: 'Toronto Stadium', city: 'Toronto' },
+  mar: { name: 'Estadio Guadalajara', city: 'Guadalajara' },
+  par: { name: 'Boston Stadium', city: 'Foxborough' },
+  fra: { name: 'Los Angeles Stadium', city: 'Inglewood' },
+  bra: { name: 'Dallas Stadium', city: 'Arlington' },
+  nor: { name: 'San Francisco Bay Area Stadium', city: 'Santa Clara' },
+  mex: { name: 'Estadio Azteca', city: 'Ciudad de México' },
+  eng: { name: 'Estadio Monterrey', city: 'Monterrey' },
+  por: { name: 'Philadelphia Stadium', city: 'Philadelphia' },
+  esp: { name: 'Seattle Stadium', city: 'Seattle' },
+  usa: { name: 'Atlanta Stadium', city: 'Atlanta' },
+  bel: { name: 'Miami Stadium', city: 'Miami Gardens' },
+  arg: { name: 'Houston Stadium', city: 'Houston' },
+  egy: { name: 'Vancouver Stadium', city: 'Vancouver' },
+  sui: { name: 'Kansas City Stadium', city: 'Kansas City' },
+  col: { name: 'New York New Jersey Stadium', city: 'East Rutherford' },
+}
+
 export function simLive(tSeg = (Date.now() - START) / 1000) {
   const out = {}
   for (const m of GUION) {
@@ -102,6 +126,7 @@ export function simLive(tSeg = (Date.now() - START) / 1000) {
         utc: m.utc, state: 'pre', clock: "0'", halftime: false,
         score: { [m.home]: '0', [m.away]: '0' },
         shootout: {}, winnerId: null, finish: null, goals: [],
+        venue: STADIUMS[m.home] ?? null,
       }
       continue
     }
@@ -132,6 +157,7 @@ export function simLive(tSeg = (Date.now() - START) / 1000) {
             score: scoreStr,
             shootout: { [m.home]: pa, [m.away]: pb },
             winnerId: null, finish: null, goals,
+            venue: STADIUMS[m.home] ?? null,
           }
           continue
         }
@@ -141,6 +167,7 @@ export function simLive(tSeg = (Date.now() - START) / 1000) {
         score: scoreStr,
         shootout: m.pens ? { [m.home]: m.pens[0], [m.away]: m.pens[1] } : {},
         winnerId: ids[m.winner], finish: m.finish, goals,
+        venue: STADIUMS[m.home] ?? null,
       }
     } else {
       out[key] = {
@@ -150,6 +177,7 @@ export function simLive(tSeg = (Date.now() - START) / 1000) {
         score: scoreStr,
         shootout: {}, winnerId: null, finish: null, goals,
         possession: simPosesion(m, tSeg),
+        venue: STADIUMS[m.home] ?? null,
       }
     }
   }

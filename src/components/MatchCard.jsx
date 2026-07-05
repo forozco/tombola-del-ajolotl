@@ -12,10 +12,11 @@
 //   - GolesDe: lista de goles de un equipo, bajo su renglón
 
 import { TEAMS, OWNER_BY_TEAM, ROUNDS, POZO } from '../data.js'
-import { finishLabel } from '../lib/matches.js'
+import { finishLabel, venueLabel } from '../lib/matches.js'
 import { ES_ADMIN } from '../lib/modes.js'
 import { Bandera } from './Bandera.jsx'
 import { OwnerChip } from './OwnerChip.jsx'
+import { IconPin } from './Icons.jsx'
 
 // Renglón de equipo dentro de la card: bandera + nombre + chip del amigo +
 // marcador (si aplica) + ✓/★ si ganó. En modo admin, el renglón es clicable
@@ -163,12 +164,22 @@ export function MatchCard({ match, champion, bracket, meta, onPick }) {
       className={`match-card${match.winner ? ' decided' : ''}${enVivo ? ' playing' : ''}`}
     >
       {meta && (
-        <div className="match-meta">
-          <span className="round-chip">{ROUNDS[match.round]}</span>
-          <span className="match-time">
-            {match.tbd ? 'hora por confirmar' : `${match.time} h`}
-          </span>
-        </div>
+        <>
+          <div className="match-meta">
+            <span className="round-chip">{ROUNDS[match.round]}</span>
+            <span className="match-time">
+              {match.tbd ? 'hora por confirmar' : `${match.time} h`}
+            </span>
+          </div>
+          {/* Venue del estadio: capa 3 (flavor/contexto). Solo si ESPN lo dio;
+              si no, línea completa se omite (cero placeholders vacíos). */}
+          {venueLabel(match) && (
+            <div className="venue-tag">
+              <IconPin />
+              <span>{venueLabel(match)}</span>
+            </div>
+          )}
+        </>
       )}
       {enVivo && (
         <div className="live-bar">

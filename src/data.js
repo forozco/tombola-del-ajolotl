@@ -65,3 +65,29 @@ export const MATCHES = [
 ]
 
 export const ROUNDS = ['Octavos', 'Cuartos', 'Semifinal', 'Final']
+
+// Sedes FIFA-oficiales del Mundial 2026 por match_id. Se usan como fallback
+// cuando ESPN aún no ha poblado el venue de un partido (típicamente en
+// fixtures muy futuros). Se prefiere el nombre "clean venue" que FIFA usa
+// durante el torneo (sin patrocinadores comerciales), que es también lo que
+// ESPN devuelve una vez el evento está detallado. Referencias:
+//   - Final: New York New Jersey Stadium (confirmado por FIFA en dic 2024)
+//   - Semis: Dallas y Atlanta
+//   - Cuartos y octavos: asignados según sede + banda del bracket
+export const VENUES = {
+  o1: { name: 'Boston Stadium',                  city: 'Foxborough' },
+  o2: { name: 'Toronto Stadium',                 city: 'Toronto' },
+  o3: { name: 'Philadelphia Stadium',            city: 'Philadelphia' },
+  o4: { name: 'Los Angeles Stadium',             city: 'Inglewood' },
+  o5: { name: 'Miami Stadium',                   city: 'Miami Gardens' },
+  o6: { name: 'Estadio Azteca',                  city: 'Ciudad de México' },
+  o7: { name: 'San Francisco Bay Area Stadium',  city: 'Santa Clara' },
+  o8: { name: 'Kansas City Stadium',             city: 'Kansas City' },
+  q1: { name: 'Seattle Stadium',                 city: 'Seattle' },
+  q2: { name: 'Vancouver Stadium',               city: 'Vancouver' },
+  q3: { name: 'Houston Stadium',                 city: 'Houston' },
+  q4: { name: 'Atlanta Stadium',                 city: 'Atlanta' },
+  s1: { name: 'Dallas Stadium',                  city: 'Arlington' },
+  s2: { name: 'Atlanta Stadium',                 city: 'Atlanta' },
+  f1: { name: 'New York New Jersey Stadium',     city: 'East Rutherford' },
+}
