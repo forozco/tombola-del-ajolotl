@@ -80,6 +80,76 @@ export function IconPin() {
   )
 }
 
+// Reloj con manecillas a las 10:10 (canónico). Se usa en el badge de
+// INICIO RETRASADO / HORARIO ACTUALIZADO de la MatchCard.
+export function IconClock() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  )
+}
+
+// Triángulo de advertencia con signo de exclamación. Para REPROGRAMADO.
+export function IconWarning() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3 22 20 2 20 Z" />
+      <path d="M12 10v5" />
+      <circle cx="12" cy="18" r="0.6" fill="currentColor" />
+    </svg>
+  )
+}
+
+// Pausa: dos barras verticales. Para SUSPENDIDO (juego detenido).
+export function IconPause() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="5" width="4" height="14" rx="1" />
+      <rect x="14" y="5" width="4" height="14" rx="1" />
+    </svg>
+  )
+}
+
+// X trazada. Para CANCELADO.
+export function IconX() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M6 6 18 18 M18 6 6 18" />
+    </svg>
+  )
+}
+
 // Joystick estilo cabinete arcade: bola + palanca + base. Se usa en el
 // botoncito easter egg de la vista Street Fighter (bonus stage del auto).
 // Pixel-y por dentro (rectángulos con esquinas rectas).
