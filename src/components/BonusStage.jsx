@@ -1,23 +1,54 @@
 // ── Easter egg · Bonus Stage del auto ──
 // Homenaje jugable al clásico bonus stage de Street Fighter II ("Destroy the
-// Car!"). Se accede desde un botoncito joystick en el panel NEXT FIGHT.
+// Car!") con los sprites originales del arcade (rip de The Spriters Resource,
+// © Capcom) servidos desde /public/sf/bonus. Se accede desde un botoncito
+// joystick en el panel NEXT FIGHT.
 // Mecánica:
-//   - Ryu vs auto pixel-art SVG con 5 estados de daño
-//   - Timer 30s en LED cyan estilo cabinete
-//   - Cada tap = golpe: haptic soft + shake sutil + score++
-//   - Auto destruido antes del tiempo → 'BONUS STAGE CLEARED!' (con bonus por
-//     tiempo sobrante)
-//   - Timer a 0 antes de destruirlo → 'TIME UP!'
-//   - High score persistido en localStorage (siempre el mejor)
-//   - Botón EXIT para cerrar y volver al panel
+//   - Ryu animado frame a frame (idle / jab / patada / hadouken)
+//   - Auto real de SSF2 con 10 estados de daño progresivo
+//   - Tap al auto = puñetazo · botón KICK = patada (x2 daño)
+//   - Especiales que gastan medidor SUPER: SHORYUKEN (3 barras, uppercut con
+//     salto), TATSUMAKI (5, giro multi-hit) y HADOUKEN (8, fireball que cruza)
+//   - Teclado: Z puño · X patada · S shoryuken · D tatsumaki · C hadouken
+//   - Chispas, vidrios y escombros reales del sheet vuelan en cada golpe;
+//     la llanta sale disparada cuando el auto ya está chatarra
+//   - Combos ("N HITS!"), score flotante, shake, haptics y SFX reales del
+//     arcade ("FIGHT!", golpes, "Hadouken!", "PERFECT" / "You lose")
+//   - Timer 30s LED · high score en localStorage · PLAY AGAIN al terminar
 
 import { useEffect, useRef, useState } from 'react'
-import { FIGHTERS } from '../sf.js'
+import { createPortal } from 'react-dom'
 import { haptic } from '../haptics.js'
 
-const HITS_TO_DESTROY = 24 // golpes para destruir el auto
+const DAMAGE_TO_DESTROY = 28 // puntos de daño para destruir el auto
 const TIME_LIMIT = 30 // segundos
+const METER_MAX = 8 // golpes para llenar el medidor SUPER
+// Costo en barras de cada especial (el hadouken pide el medidor lleno)
+const SHORYU_COST = 3
+const TATSU_COST = 5
+const HADO_COST = METER_MAX
+const COMBO_WINDOW = 900 // ms entre golpes para encadenar combo
 const BEST_KEY = 'ajolotl-sf-bonus-best'
+
+const B = '/sf/bonus'
+const seq = (name, n) => Array.from({ length: n }, (_, i) => `${B}/${name}-${i}.png`)
+const SPRITES = {
+  idle: seq('ryu-idle', 5),
+  jab: seq('ryu-jab', 2),
+  kick: seq('ryu-kick', 2),
+  shoryu: seq('ryu-shoryu', 4),
+  tatsu: seq('ryu-tatsu', 4),
+  hado: seq('ryu-hado', 5),
+  car: seq('car', 10),
+  fireball: seq('fireball', 3),
+  spark: seq('spark', 3),
+  glass: seq('glass', 3),
+  debris: ['debris-a', 'debris-b', 'debris-c', 'shard-a', 'shard-b', 'shard-c'].map(
+    (n) => `${B}/${n}.png`,
+  ),
+  big: [`${B}/debris-bumper.png`, `${B}/debris-hood.png`],
+  tire: `${B}/tire.png`,
+}
 
 function loadBestScore() {
   try {
@@ -29,257 +60,767 @@ function loadBestScore() {
   }
 }
 
-// Auto sedán morado/azul oscuro tipo el del bonus stage clásico de SF II
-// (basado en el sedán japonés estilo Lexus/Toyota del arcade). Silueta de
-// 4 puertas con parachoques cromado, señales ámbar en las esquinas, faros
-// rectangulares y placa. El daño progresa en 5 fases apilables:
-//   1 · Abolladuras y grietas en cofre/cajuela
-//   2 · Parabrisas shatter
-//   3 · Puerta descolgada + faro roto + antena caída
-//   4 · Techo hundido + capó levantado + neumático delantero desinflado
-//   5 · Chatarra: humo negro, rueda zafada, chispas
-function BonusCar({ damagePhase, shake }) {
+// ── SFX reales del arcade (rip de The Sounds Resource, © Capcom) ──
+// Clips del SF2 Turbo servidos desde /sf/bonus/sfx: golpes jab/strong/fierce,
+// la voz "Hadouken!" de Ryu, el crash del stage y el announcer (Fight!,
+// Perfect, You lose). Se decodifican una sola vez a AudioBuffer para poder
+// solapar reproducciones al mashear. Degrada en silencio si no hay audio.
+const SFX_URLS = {
+  'hit-jab': `${B}/sfx/hit-jab.m4a`,
+  'hit-strong': `${B}/sfx/hit-strong.m4a`,
+  'hit-fierce': `${B}/sfx/hit-fierce.m4a`,
+  'hit-roundhouse': `${B}/sfx/hit-roundhouse.m4a`,
+  hadouken: `${B}/sfx/hadouken.m4a`,
+  shoryuken: `${B}/sfx/shoryuken.m4a`,
+  tatsumaki: `${B}/sfx/tatsumaki.m4a`,
+  'on-fire': `${B}/sfx/on-fire.m4a`,
+  crash: `${B}/sfx/crash.m4a`,
+  fight: `${B}/sfx/fight.m4a`,
+  perfect: `${B}/sfx/perfect.m4a`,
+  'you-lose': `${B}/sfx/you-lose.m4a`,
+  'score-count': `${B}/sfx/score-count.m4a`,
+  // Música del nivel: el "Bonus Stage" del OST arcade CPS-1, en loop
+  music: `${B}/sfx/bonus-theme.m4a`,
+}
+
+let audioCtx = null
+const sfxBuffers = {}
+let sfxLoading = null
+
+function ensureSfx() {
+  audioCtx ||= new (window.AudioContext || window.webkitAudioContext)()
+  sfxLoading ||= Promise.all(
+    Object.entries(SFX_URLS).map(async ([key, url]) => {
+      try {
+        const res = await fetch(url)
+        sfxBuffers[key] = await audioCtx.decodeAudioData(await res.arrayBuffer())
+      } catch {
+        /* clip faltante: ese sonido simplemente no suena */
+      }
+    }),
+  )
+}
+
+function sfx(key, { vol = 1, rate = 1 } = {}) {
+  try {
+    ensureSfx()
+    if (audioCtx.state === 'suspended') audioCtx.resume()
+    const buf = sfxBuffers[key]
+    if (!buf) return
+    const src = audioCtx.createBufferSource()
+    src.buffer = buf
+    src.playbackRate.value = rate
+    const g = audioCtx.createGain()
+    g.gain.value = vol
+    src.connect(g)
+    g.connect(audioCtx.destination)
+    src.start()
+  } catch {
+    /* sin audio: el juego sigue igual */
+  }
+}
+
+// Chispa de impacto con los 3 frames reales del sheet, apilados con opacidad
+// secuenciada por CSS (sf-bonus-spark-f0/1/2). Se desmonta sola vía el padre.
+function HitSpark({ x, y, big }) {
   return (
-    <div className={`sf-bonus-car${shake ? ' shake' : ''}`} data-phase={damagePhase}>
-      <svg viewBox="0 0 240 130" width="240" height="130" xmlns="http://www.w3.org/2000/svg" shapeRendering="crispEdges">
-        <defs>
-          {/* Cuerpo: morado oscuro azulado, como el del arcade */}
-          <linearGradient id="bodyGrad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#5a5c7a" />
-            <stop offset="55%" stopColor="#3f4160" />
-            <stop offset="100%" stopColor="#25263c" />
-          </linearGradient>
-          <linearGradient id="chromeGrad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#f0f0f0" />
-            <stop offset="50%" stopColor="#c8c8c8" />
-            <stop offset="100%" stopColor="#8c8c8c" />
-          </linearGradient>
-          {/* Cristales tintados azules */}
-          <linearGradient id="glassGrad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#c8e0f5" />
-            <stop offset="100%" stopColor="#5a7ea5" />
-          </linearGradient>
-        </defs>
-
-        {/* Sombra bajo el auto */}
-        <ellipse
-          cx="120"
-          cy={damagePhase >= 5 ? 118 : 116}
-          rx={damagePhase >= 5 ? 82 : 100}
-          ry="4"
-          fill="rgba(0,0,0,0.55)"
-        />
-
-        {/* Cuerpo principal — silueta de sedán 4 puertas alargada */}
-        <path
-          d="M 14 92 L 14 76 Q 16 70 26 68 L 46 66 Q 58 52 76 50 L 168 50 Q 184 52 196 66 L 218 68 Q 226 70 228 76 L 228 92 Z"
-          fill="url(#bodyGrad)"
-          stroke="#1a1a2a"
-          strokeWidth="2"
-        />
-
-        {/* Techo del sedán — casi plano, ligeramente curvo */}
-        <path
-          d="M 58 66 Q 76 52 96 52 L 148 52 Q 168 52 184 66 Z"
-          fill="url(#bodyGrad)"
-          stroke="#1a1a2a"
-          strokeWidth="1.5"
-        />
-
-        {/* Parabrisas grande */}
-        <path
-          d="M 62 64 Q 76 54 96 54 L 116 54 L 116 64 Z"
-          fill="url(#glassGrad)"
-          stroke="#1a1a2a"
-          strokeWidth="1.2"
-        />
-
-        {/* Ventana delantera-izq (conductor) */}
-        <path
-          d="M 118 64 L 118 54 L 140 54 L 140 64 Z"
-          fill="url(#glassGrad)"
-          stroke="#1a1a2a"
-          strokeWidth="1.2"
-        />
-
-        {/* Ventana trasera-izq (pasajero) — sedán 4 puertas */}
-        <path
-          d="M 142 64 L 142 54 L 164 54 Q 176 54 180 64 Z"
-          fill="url(#glassGrad)"
-          stroke="#1a1a2a"
-          strokeWidth="1.2"
-        />
-
-        {/* Línea del techo (curva plana característica de sedán) */}
-        <path d="M 62 64 L 180 64" stroke="#1a1a2a" strokeWidth="0.8" opacity="0.5" />
-
-        {/* Pilares B/C entre ventanas */}
-        <line x1="117" y1="54" x2="117" y2="64" stroke="#1a1a2a" strokeWidth="1.5" />
-        <line x1="141" y1="54" x2="141" y2="64" stroke="#1a1a2a" strokeWidth="1.5" />
-
-        {/* Highlight superior del cuerpo (reflejo) */}
-        <path d="M 30 74 Q 120 70 210 74" stroke="#7a7d9c" strokeWidth="1" fill="none" opacity="0.7" />
-
-        {/* Línea de la puerta delantera */}
-        <line x1="82" y1="66" x2="82" y2="90" stroke="#1a1a2a" strokeWidth="1.2" />
-        {/* Línea de la puerta trasera */}
-        <line x1="132" y1="66" x2="132" y2="90" stroke="#1a1a2a" strokeWidth="1.2" />
-        {/* Manijas de las 2 puertas visibles */}
-        <rect x="72" y="72" width="7" height="1.6" fill="#1a1a2a" />
-        <rect x="122" y="72" width="7" height="1.6" fill="#1a1a2a" />
-
-        {/* Franja negra inferior (rocker panel) */}
-        <rect x="16" y="86" width="212" height="6" fill="#12131f" />
-
-        {/* Parachoques cromado delantero */}
-        <rect x="10" y="82" width="18" height="9" rx="1" fill="url(#chromeGrad)" stroke="#3a3a3a" strokeWidth="1" />
-        {/* Parachoques cromado trasero */}
-        <rect x="212" y="82" width="18" height="9" rx="1" fill="url(#chromeGrad)" stroke="#3a3a3a" strokeWidth="1" />
-
-        {/* Rejilla frontal delgada horizontal */}
-        <rect x="28" y="78" width="14" height="3" fill="#0a0a15" stroke="#1a1a2a" strokeWidth="0.6" />
-
-        {/* Placa delantera */}
-        <rect x="20" y="82" width="10" height="4" fill="#e8e0b0" stroke="#1a1a2a" strokeWidth="0.6" />
-
-        {/* Faros delanteros rectangulares */}
-        <rect x="16" y="72" width="14" height="6" rx="1" fill="#fff5c8" stroke="#1a1a2a" strokeWidth="1" />
-        <line x1="23" y1="72" x2="23" y2="78" stroke="#1a1a2a" strokeWidth="0.6" />
-
-        {/* Señal ámbar de esquina delantera */}
-        <rect x="30" y="74" width="4" height="4" fill="#ff9800" stroke="#7a4a00" strokeWidth="0.6" />
-
-        {/* Faros traseros rojos con detalle */}
-        <rect x="210" y="72" width="14" height="6" rx="1" fill="#e53935" stroke="#4a0000" strokeWidth="1" />
-        <line x1="217" y1="72" x2="217" y2="78" stroke="#4a0000" strokeWidth="0.6" />
-
-        {/* Señal ámbar de esquina trasera */}
-        <rect x="206" y="74" width="4" height="4" fill="#ff9800" stroke="#7a4a00" strokeWidth="0.6" />
-
-        {/* Antena delgada en el techo */}
-        <line x1="170" y1="52" x2="176" y2="36" stroke="#1a1a2a" strokeWidth="1" />
-
-        {/* Ruedas — negras con rin plateado, más sobrias que las whitewall */}
-        <circle cx="58" cy="94" r="14" fill="#0e0e0e" stroke="#000" strokeWidth="2" />
-        <circle cx="58" cy="94" r="6" fill="#7a7a80" />
-        <circle cx="58" cy="94" r="2" fill="#1a1a1a" />
-        {/* Radios sutiles del rin */}
-        <path d="M 58 88 L 58 100 M 52 94 L 64 94 M 54 90 L 62 98 M 62 90 L 54 98"
-              stroke="#3a3a3a" strokeWidth="0.7" opacity="0.7" />
-
-        <circle cx="184" cy="94" r="14" fill="#0e0e0e" stroke="#000" strokeWidth="2" />
-        <circle cx="184" cy="94" r="6" fill="#7a7a80" />
-        <circle cx="184" cy="94" r="2" fill="#1a1a1a" />
-        <path d="M 184 88 L 184 100 M 178 94 L 190 94 M 180 90 L 188 98 M 188 90 L 180 98"
-              stroke="#3a3a3a" strokeWidth="0.7" opacity="0.7" />
-
-        {/* ═════════ Overlays de daño ═════════ */}
-
-        {damagePhase >= 1 && (
-          <g>
-            {/* Abolladura cofre */}
-            <path d="M 38 78 L 50 82 L 44 88 Z" fill="#1a1a2a" opacity="0.75" />
-            {/* Abolladura cajuela */}
-            <path d="M 196 78 L 208 84 L 200 88 Z" fill="#1a1a2a" opacity="0.75" />
-            {/* Rayadura larga en el body */}
-            <path d="M 30 80 Q 90 76 150 80" stroke="#0a0a15" strokeWidth="1.2" fill="none" opacity="0.8" />
-          </g>
-        )}
-
-        {damagePhase >= 2 && (
-          <g>
-            {/* Parabrisas shatter — grietas radiales desde el impacto */}
-            <circle cx="90" cy="59" r="2.5" fill="#fff" />
-            <path
-              d="M 90 59 L 74 54 M 90 59 L 78 64 M 90 59 L 108 54 M 90 59 L 106 64 M 90 59 L 96 52 M 90 59 L 84 52"
-              stroke="#fff"
-              strokeWidth="1.3"
-              fill="none"
-              opacity="0.95"
-            />
-            <path
-              d="M 90 59 L 76 59 M 90 59 L 104 59 M 90 59 L 88 50"
-              stroke="#0a0a2a"
-              strokeWidth="0.9"
-              fill="none"
-              opacity="0.85"
-            />
-          </g>
-        )}
-
-        {damagePhase >= 3 && (
-          <g>
-            {/* Puerta delantera descolgada — cae hacia el suelo */}
-            <path
-              d="M 82 66 L 96 92 L 82 92 Z"
-              fill="url(#bodyGrad)"
-              stroke="#1a1a2a"
-              strokeWidth="1.5"
-              transform="rotate(-16 82 90)"
-            />
-            {/* Faro delantero roto — cristal fragmentado */}
-            <path d="M 18 74 L 22 78 M 22 74 L 18 78 M 26 74 L 30 78 M 30 74 L 26 78"
-                  stroke="#1a1a2a" strokeWidth="0.8" fill="none" />
-            <rect x="16" y="72" width="14" height="6" rx="1" fill="#5a5040" stroke="#1a1a2a" strokeWidth="1" />
-            {/* Antena caída */}
-            <line x1="170" y1="52" x2="162" y2="58" stroke="#1a1a2a" strokeWidth="1" />
-            {/* Ventana trasera-izq shattered */}
-            <path
-              d="M 146 56 L 156 62 M 150 54 L 162 62 M 154 56 L 168 62"
-              stroke="#fff"
-              strokeWidth="1.3"
-              fill="none"
-              opacity="0.95"
-            />
-          </g>
-        )}
-
-        {damagePhase >= 4 && (
-          <g>
-            {/* Techo hundido — la línea del roof se colapsa */}
-            <path
-              d="M 62 64 L 82 72 L 116 60 L 148 72 L 180 64"
-              stroke="#1a1a2a"
-              strokeWidth="3"
-              fill="none"
-            />
-            {/* Capó levantado */}
-            <path d="M 14 76 L 24 62 L 58 66 L 50 76 Z" fill="#3f4160" stroke="#1a1a2a" strokeWidth="1.5" />
-            <path d="M 20 68 L 50 66" stroke="#1a1a2a" strokeWidth="1" fill="none" />
-            {/* Neumático delantero desinflado (aplanado abajo) */}
-            <ellipse cx="58" cy="100" rx="14" ry="8" fill="#0e0e0e" stroke="#000" strokeWidth="2" />
-          </g>
-        )}
-
-        {damagePhase >= 5 && (
-          <g>
-            {/* Rueda trasera zafada (desalineada hacia afuera) */}
-            <circle cx="192" cy="102" r="12" fill="#0e0e0e" stroke="#000" strokeWidth="2" transform="rotate(20 192 102)" />
-            {/* Humo denso saliendo del capó/techo */}
-            <circle cx="80" cy="30" r="9" fill="#333" opacity="0.85">
-              <animate attributeName="cy" values="30;12;30" dur="1.6s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.85;0.25;0.85" dur="1.6s" repeatCount="indefinite" />
-              <animate attributeName="r" values="9;12;9" dur="1.6s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="105" cy="24" r="11" fill="#4a4a4a" opacity="0.75">
-              <animate attributeName="cy" values="24;4;24" dur="1.4s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.75;0.15;0.75" dur="1.4s" repeatCount="indefinite" />
-              <animate attributeName="r" values="11;15;11" dur="1.4s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="128" cy="28" r="8" fill="#222" opacity="0.9">
-              <animate attributeName="cy" values="28;10;28" dur="1.8s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.9;0.2;0.9" dur="1.8s" repeatCount="indefinite" />
-            </circle>
-            {/* Chispas eléctricas del motor */}
-            <path d="M 30 66 L 34 62 M 34 66 L 30 62 M 40 64 L 44 60 M 42 72 L 46 68"
-                  stroke="#ffd54d" strokeWidth="1.5" strokeLinecap="round" opacity="0.9">
-              <animate attributeName="opacity" values="0;1;0" dur="0.4s" repeatCount="indefinite" />
-            </path>
-          </g>
-        )}
-      </svg>
+    <div
+      className={`sf-bonus-spark${big ? ' big' : ''}`}
+      style={{ left: x, top: y }}
+      aria-hidden="true"
+    >
+      {SPRITES.spark.map((src, i) => (
+        <img key={src} className={`sf-bonus-spark-frame f${i}`} src={src} alt="" />
+      ))}
     </div>
   )
+}
+
+export function BonusStage({ onClose }) {
+  const [hits, setHits] = useState(0)
+  const [damage, setDamage] = useState(0)
+  const [score, setScore] = useState(0)
+  const [meter, setMeter] = useState(0)
+  const [combo, setCombo] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT)
+  const [state, setState] = useState('playing') // 'playing' | 'cleared' | 'timeup'
+  const [collapsed, setCollapsed] = useState(false) // auto ya aplastado (frame final)
+  const [ryuAnim, setRyuAnim] = useState({ name: 'idle', frame: 0 })
+  const [sparks, setSparks] = useState([]) // {id, x, y, big}
+  const [particles, setParticles] = useState([]) // {id, src, x, y, dx, dy, rot, cls, label}
+  const [fireball, setFireball] = useState(null) // {id, dist}
+  const [flash, setFlash] = useState(0)
+  const [muted, setMuted] = useState(false)
+  const [shake, setShake] = useState(false)
+  const [best, setBest] = useState(() => loadBestScore())
+
+  const idRef = useRef(0)
+  const musicRef = useRef(null) // nodo del loop de música (para poder pararlo)
+  // Espejos en ref de state que se lee dentro de callbacks/timeouts, para no
+  // meter efectos secundarios en updaters (StrictMode los ejecuta doble).
+  const stateRef = useRef('playing')
+  stateRef.current = state
+  const damageRef = useRef(0)
+  const scoreRef = useRef(0)
+  const hitzoneRef = useRef(null)
+  const ryuRef = useRef(null)
+  const animTimerRef = useRef(null)
+  const timersRef = useRef(new Set())
+  const lastHitRef = useRef(0)
+  const comboTimerRef = useRef(null)
+  const tireGoneRef = useRef(false)
+  const busyRef = useRef(false)
+  const mutedRef = useRef(false)
+  mutedRef.current = muted
+
+  // setTimeout con registro para limpiar todo al desmontar
+  const later = (fn, ms) => {
+    const id = setTimeout(() => {
+      timersRef.current.delete(id)
+      fn()
+    }, ms)
+    timersRef.current.add(id)
+    return id
+  }
+  useEffect(
+    () => () => {
+      timersRef.current.forEach(clearTimeout)
+      clearTimeout(animTimerRef.current)
+      clearTimeout(comboTimerRef.current)
+    },
+    [],
+  )
+
+  // Pre-carga de frames y decodificación de los SFX del arcade; el clásico
+  // "FIGHT!" arranca la ronda (si el navegador aún no permite audio porque no
+  // hubo gesto, se activa solo con el primer golpe).
+  useEffect(() => {
+    Object.values(SPRITES)
+      .flat()
+      .forEach((src) => {
+        const img = new Image()
+        img.src = src
+      })
+    try {
+      ensureSfx()
+    } catch {
+      /* sin audio */
+    }
+    later(() => {
+      if (!mutedRef.current) sfx('fight')
+    }, 400)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const play = (k, opts) => {
+    if (!mutedRef.current) sfx(k, opts)
+  }
+
+  // ── Música de fondo en loop (Web Audio, mismo contexto que los SFX) ──
+  const startMusic = () => {
+    if (mutedRef.current || musicRef.current) return
+    try {
+      if (!audioCtx || !sfxBuffers.music) return
+      if (audioCtx.state === 'suspended') audioCtx.resume()
+      const src = audioCtx.createBufferSource()
+      src.buffer = sfxBuffers.music
+      src.loop = true
+      const g = audioCtx.createGain()
+      g.gain.value = 0.3 // de fondo: que los golpes y voces se oigan encima
+      src.connect(g)
+      g.connect(audioCtx.destination)
+      src.start()
+      musicRef.current = src
+    } catch {
+      /* sin audio */
+    }
+  }
+
+  const stopMusic = () => {
+    try {
+      musicRef.current?.stop()
+    } catch {
+      /* ya estaba parado */
+    }
+    musicRef.current = null
+  }
+
+  // Arranca cuando los buffers terminan de decodificar; para al desmontar
+  useEffect(() => {
+    let vivo = true
+    ;(async () => {
+      try {
+        ensureSfx()
+        await sfxLoading
+        if (vivo && stateRef.current === 'playing') startMusic()
+      } catch {
+        /* sin audio */
+      }
+    })()
+    return () => {
+      vivo = false
+      stopMusic()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // El toggle de sonido también pausa/reanuda la música
+  useEffect(() => {
+    if (muted) stopMusic()
+    else if (state === 'playing') startMusic()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [muted])
+
+  // Loop del idle de Ryu (5 frames de la postura del arcade)
+  useEffect(() => {
+    if (ryuAnim.name !== 'idle') return undefined
+    const id = setInterval(
+      () =>
+        setRyuAnim((a) =>
+          a.name === 'idle' ? { name: 'idle', frame: (a.frame + 1) % SPRITES.idle.length } : a,
+        ),
+      160,
+    )
+    return () => clearInterval(id)
+  }, [ryuAnim.name])
+
+  // Reproduce una animación de ataque frame a frame y regresa al idle.
+  // loops repite el ciclo (giro del tatsumaki); holdMs congela el último
+  // frame un rato antes de volver (Ryu suspendido tras el shoryuken).
+  const playAnim = (name, ms, { loops = 1, holdMs = 0 } = {}) => {
+    clearTimeout(animTimerRef.current)
+    const frames = SPRITES[name].length
+    const total = frames * loops
+    let i = 0
+    setRyuAnim({ name, frame: 0 })
+    const step = () => {
+      i += 1
+      if (i < total) {
+        setRyuAnim({ name, frame: i % frames })
+        animTimerRef.current = setTimeout(step, ms)
+      } else if (holdMs > 0) {
+        animTimerRef.current = setTimeout(() => setRyuAnim({ name: 'idle', frame: 0 }), holdMs)
+      } else {
+        setRyuAnim({ name: 'idle', frame: 0 })
+      }
+    }
+    animTimerRef.current = setTimeout(step, ms)
+  }
+
+  // Timer del arcade: tick de 100ms para precisión visual
+  useEffect(() => {
+    if (state !== 'playing') return undefined
+    const started = Date.now()
+    const id = setInterval(() => {
+      const elapsed = (Date.now() - started) / 1000
+      const rest = Math.max(0, TIME_LIMIT - elapsed)
+      setTimeLeft(rest)
+      if (rest <= 0) {
+        setState('timeup')
+        clearInterval(id)
+      }
+    }, 100)
+    return () => clearInterval(id)
+  }, [state])
+
+  const spawnParticles = (x, y, kind) => {
+    const pool =
+      kind === 'glass' ? SPRITES.glass : kind === 'burst' ? [...SPRITES.debris, ...SPRITES.big] : SPRITES.debris
+    const count = kind === 'burst' ? 8 : kind === 'glass' ? 4 : 3
+    const nuevos = Array.from({ length: count }, () => ({
+      id: ++idRef.current,
+      src: pool[Math.floor(Math.random() * pool.length)],
+      x,
+      y,
+      dx: `${Math.round((Math.random() * 2 - 0.6) * 110)}px`,
+      dy: `${Math.round(-30 - Math.random() * 110)}px`,
+      rot: `${Math.round((Math.random() * 2 - 1) * 320)}deg`,
+      cls: 'debris',
+    }))
+    setParticles((p) => [...p, ...nuevos])
+    later(() => {
+      const ids = new Set(nuevos.map((n) => n.id))
+      setParticles((p) => p.filter((pt) => !ids.has(pt.id)))
+    }, 750)
+  }
+
+  const spawnScorePop = (x, y, pts) => {
+    const pop = { id: ++idRef.current, x, y, cls: 'pop', label: `+${pts}` }
+    setParticles((p) => [...p, pop])
+    later(() => setParticles((p) => p.filter((pt) => pt.id !== pop.id)), 700)
+  }
+
+  const spawnTire = () => {
+    if (tireGoneRef.current) return
+    tireGoneRef.current = true
+    const rect = hitzoneRef.current?.getBoundingClientRect()
+    const tire = {
+      id: ++idRef.current,
+      src: SPRITES.tire,
+      x: (rect?.width ?? 300) * 0.28,
+      y: (rect?.height ?? 170) * 0.8,
+      dx: '160px',
+      dy: '-90px',
+      rot: '720deg',
+      cls: 'debris tire',
+    }
+    setParticles((p) => [...p, tire])
+    later(() => setParticles((p) => p.filter((pt) => pt.id !== tire.id)), 900)
+  }
+
+  // Núcleo de todo golpe: daño, chispa, partículas, combo, score y fin
+  const applyDamage = (pts, x, y, opts = {}) => {
+    if (stateRef.current !== 'playing') return
+    const sid = ++idRef.current
+    setSparks((s) => [...s, { id: sid, x, y, big: Boolean(opts.big) }])
+    later(() => setSparks((s) => s.filter((sp) => sp.id !== sid)), 450)
+    spawnParticles(x, y, opts.big ? 'burst' : opts.glass ? 'glass' : 'debris')
+    spawnScorePop(x, y - 26, opts.score)
+    setShake(true)
+    later(() => setShake(false), opts.big ? 300 : 150)
+
+    const now = Date.now()
+    const encadena = now - lastHitRef.current < COMBO_WINDOW
+    setCombo((c) => (encadena ? c + 1 : 1))
+    lastHitRef.current = now
+    clearTimeout(comboTimerRef.current)
+    comboTimerRef.current = setTimeout(() => setCombo(0), COMBO_WINDOW)
+
+    setHits((h) => h + 1)
+    scoreRef.current += opts.score
+    setScore(scoreRef.current)
+    // Los golpes normales cargan el medidor; los hits de un especial no
+    // (meterGain 0), para que un especial no se pague solo.
+    setMeter((m) => Math.min(METER_MAX, m + (opts.meterGain ?? 1)))
+    damageRef.current += pts
+    setDamage(damageRef.current)
+    if (damageRef.current / DAMAGE_TO_DESTROY >= 0.75) spawnTire()
+    if (damageRef.current >= DAMAGE_TO_DESTROY) setState('cleared')
+  }
+
+  // Punto aleatorio sobre el auto (para golpes lanzados desde los botones)
+  const randCarPoint = () => {
+    const rect = hitzoneRef.current?.getBoundingClientRect()
+    const w = rect?.width ?? 300
+    const h = rect?.height ?? 170
+    return { x: w * (0.25 + Math.random() * 0.5), y: h * (0.35 + Math.random() * 0.4) }
+  }
+
+  // Alterna jab/strong al mashear, con pitch ligeramente variable para que
+  // los golpes seguidos no suenen a metralleta del mismo sample
+  const jabAltRef = useRef(false)
+  const hitRate = () => 0.94 + Math.random() * 0.12
+
+  const punch = (x, y) => {
+    if (state !== 'playing' || busyRef.current) return
+    haptic.soft()
+    jabAltRef.current = !jabAltRef.current
+    play(jabAltRef.current ? 'hit-jab' : 'hit-strong', { rate: hitRate() })
+    playAnim('jab', 70)
+    applyDamage(1, x, y, { score: 100 })
+  }
+
+  const kick = () => {
+    if (state !== 'playing' || busyRef.current) return
+    haptic.medium()
+    play('hit-roundhouse', { rate: hitRate() })
+    playAnim('kick', 100)
+    const { x, y } = randCarPoint()
+    applyDamage(2, x, y, { score: 200, glass: true })
+  }
+
+  // SHORYUKEN: Ryu se lanza al auto y conecta el uppercut con salto
+  const shoryuken = () => {
+    if (state !== 'playing' || busyRef.current || meter < SHORYU_COST) return
+    busyRef.current = true
+    setMeter((m) => m - SHORYU_COST)
+    haptic.medium()
+    play('shoryuken')
+    playAnim('shoryu', 90, { holdMs: 280 })
+    later(() => {
+      const rect = hitzoneRef.current?.getBoundingClientRect()
+      play('hit-fierce', { rate: 1.05 })
+      applyDamage(3, (rect?.width ?? 300) * 0.4, (rect?.height ?? 170) * 0.3, {
+        score: 400,
+        big: true,
+        meterGain: 0,
+      })
+    }, 330)
+    later(() => {
+      busyRef.current = false
+    }, 740)
+  }
+
+  // TATSUMAKI: giro que cruza hacia el auto pegando 3 veces
+  const tatsumaki = () => {
+    if (state !== 'playing' || busyRef.current || meter < TATSU_COST) return
+    busyRef.current = true
+    setMeter((m) => m - TATSU_COST)
+    haptic.medium()
+    play('tatsumaki')
+    playAnim('tatsu', 80, { loops: 2, holdMs: 140 })
+    ;[320, 540, 760].forEach((t, i) =>
+      later(() => {
+        play('hit-roundhouse', { rate: 0.94 + i * 0.07 })
+        const { x, y } = randCarPoint()
+        applyDamage(2, x, y, { score: 200, glass: true, meterGain: 0 })
+      }, t),
+    )
+    later(() => {
+      busyRef.current = false
+    }, 940)
+  }
+
+  const hadouken = () => {
+    if (state !== 'playing' || busyRef.current || meter < HADO_COST) return
+    busyRef.current = true
+    setMeter(0)
+    haptic.success()
+    play('hadouken')
+    playAnim('hado', 80)
+    // La bola sale al extender los brazos y viaja hasta el centro del auto
+    later(() => {
+      const ryuRect = ryuRef.current?.getBoundingClientRect()
+      const carRect = hitzoneRef.current?.getBoundingClientRect()
+      const dist =
+        ryuRect && carRect
+          ? carRect.left + carRect.width * 0.5 - (ryuRect.right - 10)
+          : 200
+      setFireball({ id: ++idRef.current, dist: Math.max(120, Math.round(dist)) })
+    }, 240)
+    later(() => {
+      setFireball(null)
+      play('on-fire')
+      play('hit-fierce', { vol: 1, rate: 0.9 })
+      haptic.goal()
+      setFlash((f) => f + 1)
+      const rect = hitzoneRef.current?.getBoundingClientRect()
+      applyDamage(8, (rect?.width ?? 300) * 0.5, (rect?.height ?? 170) * 0.5, {
+        score: 1000,
+        big: true,
+        meterGain: 0,
+      })
+      busyRef.current = false
+    }, 700)
+  }
+
+  // Tap directo al auto = puñetazo donde cayó el dedo
+  const onHitCar = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    punch(e.clientX - rect.left, e.clientY - rect.top)
+  }
+
+  // Enter/Espacio sobre el hitzone (click de teclado llega con detail 0)
+  const onHitCarKeyboard = (e) => {
+    if (e.detail !== 0) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    punch(rect.width * 0.5, rect.height * 0.5)
+  }
+
+  // Controles de teclado: Z puño · X patada · S shoryuken · D tatsumaki ·
+  // C hadouken
+  const actionsRef = useRef({})
+  actionsRef.current = { punch, kick, shoryuken, tatsumaki, hadouken }
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.repeat) return
+      const k = e.key.toLowerCase()
+      if (k === 'z') {
+        const rect = hitzoneRef.current?.getBoundingClientRect()
+        actionsRef.current.punch((rect?.width ?? 300) * 0.5, (rect?.height ?? 170) * 0.5)
+      } else if (k === 'x') {
+        actionsRef.current.kick()
+      } else if (k === 's') {
+        actionsRef.current.shoryuken()
+      } else if (k === 'd') {
+        actionsRef.current.tatsumaki()
+      } else if (k === 'c') {
+        actionsRef.current.hadouken()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // Al terminar: colapso del auto, fanfarria y high score
+  useEffect(() => {
+    if (state === 'playing') return undefined
+    haptic.success()
+    stopMusic() // que el announcer y el jingle se oigan limpios
+    let collapseId = null
+    if (state === 'cleared') {
+      // Crash del auto colapsando → "PERFECT" del announcer → tally del score
+      play('crash', { rate: 0.85 })
+      later(() => play('perfect'), 600)
+      later(() => play('score-count'), 1300)
+      setFlash((f) => f + 1)
+      collapseId = setTimeout(() => setCollapsed(true), 260)
+    } else {
+      play('you-lose')
+    }
+    const timeBonus = state === 'cleared' ? Math.floor(timeLeft * 1000) : 0
+    const final = scoreRef.current + timeBonus
+    scoreRef.current = final
+    setScore(final)
+    if (final > best) {
+      setBest(final)
+      try {
+        localStorage.setItem(BEST_KEY, String(final))
+      } catch {
+        /* sesión sin storage: solo memoria */
+      }
+    }
+    return () => clearTimeout(collapseId)
+  }, [state])
+
+  const reset = () => {
+    clearTimeout(animTimerRef.current)
+    busyRef.current = false
+    tireGoneRef.current = false
+    lastHitRef.current = 0
+    damageRef.current = 0
+    scoreRef.current = 0
+    setHits(0)
+    setDamage(0)
+    setScore(0)
+    setMeter(0)
+    setCombo(0)
+    setCollapsed(false)
+    setSparks([])
+    setParticles([])
+    setFireball(null)
+    setRyuAnim({ name: 'idle', frame: 0 })
+    setTimeLeft(TIME_LIMIT)
+    setState('playing')
+    later(() => play('fight'), 300)
+    later(() => startMusic(), 600)
+  }
+
+  const p2 = (n) => String(n).padStart(2, '0')
+  const displayTime = `00:${p2(Math.floor(timeLeft))}`
+  // Frame del auto: 0-7 según daño; al destruirlo colapsa 8 → 9 (chatarra)
+  const carFrame =
+    state === 'cleared'
+      ? collapsed
+        ? 9
+        : 8
+      : Math.min(7, Math.floor((damage / DAMAGE_TO_DESTROY) * 8))
+  const meterReady = meter >= HADO_COST
+
+  const overlay = (
+    <div
+      className="sf-bonus-overlay"
+      role="dialog"
+      aria-label="Bonus Stage"
+      onPointerDown={() => {
+        // Primer gesto en modo prueba (?bonus): despierta el audio y arranca
+        // la música si el navegador la tenía bloqueada por autoplay.
+        try {
+          if (audioCtx?.state === 'suspended') audioCtx.resume()
+        } catch {
+          /* sin audio */
+        }
+        if (stateRef.current === 'playing') startMusic()
+      }}
+    >
+      <div className="sf-bonus-scene">
+        {/* HUD superior estilo cabinete */}
+        <div className="sf-bonus-hud">
+          <div className="sf-bonus-hud-block">
+            <span className="sf-bonus-hud-label">TIME</span>
+            <span className="sf-bonus-hud-value sf-bonus-time">{displayTime}</span>
+          </div>
+          <div className="sf-bonus-hud-block">
+            <span className="sf-bonus-hud-label">HITS</span>
+            <span className="sf-bonus-hud-value sf-bonus-hits">{p2(hits)}</span>
+          </div>
+          <div className="sf-bonus-hud-block">
+            <span className="sf-bonus-hud-label">SCORE</span>
+            <span className="sf-bonus-hud-value sf-bonus-score">{score}</span>
+          </div>
+        </div>
+
+        {/* Título arcade */}
+        <div className="sf-bonus-title">BONUS STAGE</div>
+        <div className="sf-bonus-subtitle">DESTROY THE CAR!</div>
+
+        {/* Área jugable — la escena del muelle vive AQUÍ para que el piso de
+            madera quede exactamente donde pisan Ryu y el auto (anclada al
+            fondo del arena con preserveAspectRatio YMax) */}
+        <div className="sf-bonus-arena">
+          <BonusScene />
+          {combo >= 2 ? <div className="sf-bonus-combo">{combo} HITS!</div> : null}
+
+          <div className="sf-bonus-ryu-sprite" data-anim={ryuAnim.name} ref={ryuRef}>
+            <img src={SPRITES[ryuAnim.name][ryuAnim.frame]} alt="Ryu" draggable={false} />
+          </div>
+
+          {fireball ? (
+            <div
+              key={fireball.id}
+              className="sf-bonus-fireball"
+              style={{ '--fb-dist': `${fireball.dist}px` }}
+              aria-hidden="true"
+            >
+              <img className="sf-bonus-fb-frame f0" src={SPRITES.fireball[1]} alt="" />
+              <img className="sf-bonus-fb-frame f1" src={SPRITES.fireball[2]} alt="" />
+            </div>
+          ) : null}
+
+          <button
+            ref={hitzoneRef}
+            className="sf-bonus-hitzone"
+            onPointerDown={state === 'playing' ? onHitCar : undefined}
+            onClick={onHitCarKeyboard}
+            aria-label="Golpear el auto"
+          >
+            <div className={`sf-bonus-car${shake ? ' shake' : ''}`} data-phase={carFrame}>
+              <img
+                className="sf-bonus-car-img"
+                src={SPRITES.car[carFrame]}
+                alt=""
+                draggable={false}
+              />
+            </div>
+            {sparks.map((s) => (
+              <HitSpark key={s.id} x={s.x} y={s.y} big={s.big} />
+            ))}
+            {particles.map((pt) =>
+              pt.cls === 'pop' ? (
+                <span
+                  key={pt.id}
+                  className="sf-bonus-pop"
+                  style={{ left: pt.x, top: pt.y }}
+                  aria-hidden="true"
+                >
+                  {pt.label}
+                </span>
+              ) : (
+                <img
+                  key={pt.id}
+                  className={`sf-bonus-particle ${pt.cls}`}
+                  src={pt.src}
+                  alt=""
+                  style={{ left: pt.x, top: pt.y, '--dx': pt.dx, '--dy': pt.dy, '--rot': pt.rot }}
+                />
+              ),
+            )}
+          </button>
+
+          {flash > 0 ? <div key={flash} className="sf-bonus-flash" aria-hidden="true" /> : null}
+        </div>
+
+        {/* Barra de daño */}
+        <div className="sf-bonus-damage-bar">
+          <div
+            className="sf-bonus-damage-fill"
+            style={{ width: `${Math.min(100, (damage / DAMAGE_TO_DESTROY) * 100)}%` }}
+          />
+        </div>
+
+        {/* Medidor SUPER + botonera arcade */}
+        <div className="sf-bonus-super-row">
+          <span className="sf-bonus-super-label">SUPER</span>
+          <div className={`sf-bonus-super-bar${meterReady ? ' ready' : ''}`}>
+            <div
+              className="sf-bonus-super-fill"
+              style={{ width: `${(meter / METER_MAX) * 100}%` }}
+            />
+          </div>
+        </div>
+        <div className="sf-bonus-buttons">
+          <button
+            className="sf-bonus-btn punch"
+            onPointerDown={() => {
+              const { x, y } = randCarPoint()
+              punch(x, y)
+            }}
+            disabled={state !== 'playing'}
+          >
+            PUNCH
+          </button>
+          <button
+            className="sf-bonus-btn kick"
+            onPointerDown={kick}
+            disabled={state !== 'playing'}
+          >
+            KICK
+          </button>
+        </div>
+
+        {/* Especiales: gastan barras del medidor SUPER (costo en el chip) */}
+        <div className="sf-bonus-specials">
+          <button
+            className={`sf-bonus-btn shoryu${meter >= SHORYU_COST ? ' ready' : ''}`}
+            onPointerDown={shoryuken}
+            disabled={state !== 'playing' || meter < SHORYU_COST}
+          >
+            SHORYUKEN
+            <span className="sf-bonus-cost">{SHORYU_COST}</span>
+          </button>
+          <button
+            className={`sf-bonus-btn tatsu${meter >= TATSU_COST ? ' ready' : ''}`}
+            onPointerDown={tatsumaki}
+            disabled={state !== 'playing' || meter < TATSU_COST}
+          >
+            TATSUMAKI
+            <span className="sf-bonus-cost">{TATSU_COST}</span>
+          </button>
+          <button
+            className={`sf-bonus-btn hado${meterReady ? ' ready' : ''}`}
+            onPointerDown={hadouken}
+            disabled={state !== 'playing' || !meterReady}
+          >
+            HADOUKEN
+            <span className="sf-bonus-cost">{HADO_COST}</span>
+          </button>
+        </div>
+
+        {/* Estado final (overlay sobre la escena) */}
+        {state !== 'playing' ? (
+          <div className="sf-bonus-endgame">
+            <div className={`sf-bonus-endgame-title ${state}`}>
+              {state === 'cleared' ? 'BONUS STAGE CLEARED!' : 'TIME UP!'}
+            </div>
+            {state === 'cleared' ? (
+              <div className="sf-bonus-endgame-bonus">
+                TIME BONUS · {Math.floor(timeLeft * 1000)}
+              </div>
+            ) : null}
+            <div className="sf-bonus-endgame-score">SCORE · {score}</div>
+            <div className="sf-bonus-endgame-best">
+              {score >= best && score > 0 ? 'NEW HIGH SCORE!' : `HI-SCORE · ${best}`}
+            </div>
+            <button className="sf-bonus-exit sf-bonus-again" onClick={reset}>
+              PLAY AGAIN
+            </button>
+          </div>
+        ) : null}
+
+        {/* Instrucción / botón exit */}
+        <div className="sf-bonus-footer">
+          <span className="sf-bonus-instruction">
+            {state === 'playing' ? 'TAP CAR = PUNCH · Z X S D C' : 'GAME OVER'}
+          </span>
+          <button
+            className="sf-bonus-exit"
+            onClick={() => setMuted((m) => !m)}
+            aria-pressed={muted}
+          >
+            {muted ? 'SOUND OFF' : 'SOUND ON'}
+          </button>
+          <button className="sf-bonus-exit" onClick={onClose}>
+            EXIT
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  // Portal a <body>: el overlay debe ser fixed de VERDAD. Renderizado dentro
+  // del tab-content (que anima con transform/filter) el fixed se rompe y el
+  // modal queda confinado a la columna, tapado por el tab bar.
+  return typeof document === 'undefined' ? overlay : createPortal(overlay, document.body)
 }
 
 // Escena de fondo del bonus stage: muelles con océano y barco al horizonte,
@@ -290,7 +831,7 @@ function BonusScene() {
     <svg
       className="sf-bonus-bg"
       viewBox="0 0 480 320"
-      preserveAspectRatio="xMidYMid slice"
+      preserveAspectRatio="xMidYMax slice"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
@@ -386,189 +927,5 @@ function BonusScene() {
         <rect x="0" y="305" width="480" height="1.5" />
       </g>
     </svg>
-  )
-}
-
-// Overlay de "hit spark" que aparece en la posición del click y se disipa.
-// Puramente decorativo — se re-renderiza con key para reiniciar la animación.
-function HitSpark({ x, y, id }) {
-  return (
-    <div key={id} className="sf-bonus-spark" style={{ left: x, top: y }}>
-      <svg viewBox="0 0 32 32" width="48" height="48">
-        <g stroke="#ffd54d" strokeWidth="2.5" strokeLinecap="round">
-          <line x1="16" y1="4" x2="16" y2="10" />
-          <line x1="16" y1="22" x2="16" y2="28" />
-          <line x1="4" y1="16" x2="10" y2="16" />
-          <line x1="22" y1="16" x2="28" y2="16" />
-          <line x1="7" y1="7" x2="12" y2="12" />
-          <line x1="20" y1="20" x2="25" y2="25" />
-          <line x1="25" y1="7" x2="20" y2="12" />
-          <line x1="7" y1="25" x2="12" y2="20" />
-        </g>
-        <circle cx="16" cy="16" r="5" fill="#ff4d4f" />
-        <text
-          x="16"
-          y="20"
-          textAnchor="middle"
-          fill="#fff"
-          fontSize="7"
-          fontFamily="'Press Start 2P', monospace"
-        >POW</text>
-      </svg>
-    </div>
-  )
-}
-
-export function BonusStage({ onClose }) {
-  const [hits, setHits] = useState(0)
-  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT)
-  const [state, setState] = useState('playing') // 'playing' | 'cleared' | 'timeup'
-  const [sparks, setSparks] = useState([]) // {x, y, id}
-  const [shake, setShake] = useState(false)
-  const [best, setBest] = useState(() => loadBestScore())
-  const sparkIdRef = useRef(0)
-
-  // Timer del arcade: tick de 100ms para precisión visual (el display en
-  // segundos, pero por dentro milisegundos para calcular bonus final).
-  useEffect(() => {
-    if (state !== 'playing') return undefined
-    const started = Date.now()
-    const id = setInterval(() => {
-      const elapsed = (Date.now() - started) / 1000
-      const rest = Math.max(0, TIME_LIMIT - elapsed)
-      setTimeLeft(rest)
-      if (rest <= 0) {
-        setState('timeup')
-        clearInterval(id)
-      }
-    }, 100)
-    return () => clearInterval(id)
-  }, [state])
-
-  // Al golpear: incrementa hits, agrega chispa, hace shake sutil y checa fin
-  const onHitCar = (e) => {
-    if (state !== 'playing') return
-    haptic.soft()
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = (e.clientX ?? e.touches?.[0]?.clientX ?? rect.left + rect.width / 2) - rect.left
-    const y = (e.clientY ?? e.touches?.[0]?.clientY ?? rect.top + rect.height / 2) - rect.top
-    const id = ++sparkIdRef.current
-    setSparks((s) => [...s, { x, y, id }])
-    setTimeout(() => setSparks((s) => s.filter((sp) => sp.id !== id)), 500)
-    setShake(true)
-    setTimeout(() => setShake(false), 150)
-    setHits((h) => {
-      const next = h + 1
-      if (next >= HITS_TO_DESTROY) setState('cleared')
-      return next
-    })
-  }
-
-  // Al terminar: calcula score final y actualiza high score si aplica
-  useEffect(() => {
-    if (state === 'playing') return
-    haptic.success()
-    // Bonus por tiempo sobrante × 1000 puntos si limpió el auto, si no solo
-    // el conteo de golpes × 100 (para que aún se sienta un score real).
-    const timeBonus = state === 'cleared' ? Math.floor(timeLeft * 1000) : 0
-    const score = hits * 100 + timeBonus
-    if (score > best) {
-      setBest(score)
-      try {
-        localStorage.setItem(BEST_KEY, String(score))
-      } catch {
-        /* sesión sin storage: solo memoria */
-      }
-    }
-  }, [state])
-
-  const p2 = (n) => String(n).padStart(2, '0')
-  const displayTime = `00:${p2(Math.floor(timeLeft))}`
-  const damagePhase = Math.min(4, Math.floor((hits / HITS_TO_DESTROY) * 5))
-  const score = hits * 100 + (state === 'cleared' ? Math.floor(timeLeft * 1000) : 0)
-  const ryu = FIGHTERS.israeltl
-
-  return (
-    <div className="sf-bonus-overlay" role="dialog" aria-label="Bonus Stage">
-      <div className="sf-bonus-scene">
-        <BonusScene />
-        {/* HUD superior estilo cabinete */}
-        <div className="sf-bonus-hud">
-          <div className="sf-bonus-hud-block">
-            <span className="sf-bonus-hud-label">TIME</span>
-            <span className="sf-bonus-hud-value sf-bonus-time">{displayTime}</span>
-          </div>
-          <div className="sf-bonus-hud-block">
-            <span className="sf-bonus-hud-label">HITS</span>
-            <span className="sf-bonus-hud-value sf-bonus-hits">{p2(hits)}</span>
-          </div>
-          <div className="sf-bonus-hud-block">
-            <span className="sf-bonus-hud-label">SCORE</span>
-            <span className="sf-bonus-hud-value sf-bonus-score">{score}</span>
-          </div>
-        </div>
-
-        {/* Título arcade */}
-        <div className="sf-bonus-title">BONUS STAGE</div>
-        <div className="sf-bonus-subtitle">DESTROY THE CAR!</div>
-
-        {/* Área jugable */}
-        <div className="sf-bonus-arena">
-          <img
-            className="sf-bonus-ryu"
-            src={ryu.stance}
-            alt="Ryu"
-          />
-          <button
-            className={`sf-bonus-hitzone${shake ? ' shake' : ''}`}
-            onClick={onHitCar}
-            aria-label="Golpear el auto"
-          >
-            <BonusCar damagePhase={damagePhase} shake={shake} />
-            {sparks.map((s) => (
-              <HitSpark key={s.id} id={s.id} x={s.x} y={s.y} />
-            ))}
-          </button>
-        </div>
-
-        {/* Barra de daño */}
-        <div className="sf-bonus-damage-bar">
-          <div
-            className="sf-bonus-damage-fill"
-            style={{ width: `${Math.min(100, (hits / HITS_TO_DESTROY) * 100)}%` }}
-          />
-        </div>
-
-        {/* Estado final (overlay sobre la escena) */}
-        {state !== 'playing' && (
-          <div className="sf-bonus-endgame">
-            <div className={`sf-bonus-endgame-title ${state}`}>
-              {state === 'cleared' ? 'BONUS STAGE CLEARED!' : 'TIME UP!'}
-            </div>
-            {state === 'cleared' && (
-              <div className="sf-bonus-endgame-bonus">
-                TIME BONUS · {Math.floor(timeLeft * 1000)}
-              </div>
-            )}
-            <div className="sf-bonus-endgame-score">SCORE · {score}</div>
-            <div className="sf-bonus-endgame-best">
-              {score > best ? 'NEW HIGH SCORE!' : `HI-SCORE · ${best}`}
-            </div>
-          </div>
-        )}
-
-        {/* Instrucción / botón exit */}
-        <div className="sf-bonus-footer">
-          {state === 'playing' ? (
-            <span className="sf-bonus-instruction">TAP THE CAR TO PUNCH</span>
-          ) : (
-            <span className="sf-bonus-instruction">GAME OVER</span>
-          )}
-          <button className="sf-bonus-exit" onClick={onClose}>
-            EXIT
-          </button>
-        </div>
-      </div>
-    </div>
   )
 }
