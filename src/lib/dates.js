@@ -41,15 +41,24 @@ export function fechaCorta(dateStr) {
   })
 }
 
-// La jornada que se muestra en "Hoy": se activa 2h antes del primer partido
-// y la activa es la más reciente que ya entró. Así los partidos siguen
-// visibles toda la jornada y hasta ~2h antes del primer del día siguiente
-// (no desaparecen de golpe a medianoche). Zona-agnóstico: cada día se agrupa
-// por la hora local del dispositivo y el margen se compara contra UTC.
+// La jornada que se muestra en "Hoy". Dos reglas, en este orden:
+//   1. Si hoy (fecha local del dispositivo) tiene partidos programados,
+//      la jornada es HOY — sin importar que el primer partido esté a horas.
+//      Esto asegura que al cruzar la medianoche la app cambie de día.
+//   2. En días sin partidos (descansos del torneo, p.ej. el 8 o el 13 de
+//      julio), se activa la próxima jornada 2h antes de su primer partido.
+//      Mientras tanto se mantiene la última jornada activa (para no dejar
+//      la app vacía).
+// Zona-agnóstico: cada día se agrupa por la hora local del dispositivo y
+// el margen se compara contra timestamps absolutos (UTC).
 const ROLLOVER_MS = 2 * 3_600_000
 
 export function jornadaHoy(matches, ahora) {
   const dias = [...new Set(matches.map((m) => m.date))].sort()
+  const hoy = todayStr(ahora)
+  // Regla 1: hoy con partidos programados manda.
+  if (dias.includes(hoy)) return hoy
+  // Regla 2: día de descanso — última jornada dentro de la ventana de 2h.
   const inicioDe = (d) =>
     Math.min(...matches.filter((m) => m.date === d).map((m) => new Date(m.utc).getTime()))
   let activa = dias[0]
