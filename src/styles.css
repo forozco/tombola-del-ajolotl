@@ -1727,6 +1727,300 @@ body {
   margin-bottom: 16px;
 }
 
+/* ── Panel LIVE VS (partido en curso, encima del roster) ── */
+/* Reproduce la pantalla VS del arcade: dos peleadores frente a frente
+   sobre el escenario del anfitrión (mismo GIF/JPG del bracket). El fondo
+   del stage domina, con overlay oscuro para legibilidad. */
+.sf-live-vs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 -4px 18px;
+}
+
+.sf-live-card {
+  position: relative;
+  border: 3px solid var(--sf-accent, #ffd54d);
+  border-radius: 8px;
+  overflow: hidden;
+  background-image: var(--sf-live-stage);
+  background-size: cover;
+  background-position: center;
+  padding: 10px 12px 14px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6), 0 0 22px rgba(255, 213, 77, 0.25);
+  color: #fff;
+}
+
+/* Overlay oscuro sobre el stage para que el texto/personajes se lean */
+.sf-live-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.25) 50%,
+    rgba(0, 0, 0, 0.7) 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Todo el contenido debe estar sobre el overlay */
+.sf-live-topbar,
+.sf-live-arena {
+  position: relative;
+  z-index: 1;
+}
+
+.sf-live-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.sf-live-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--live);
+  font-weight: 800;
+}
+
+.sf-live-stage-label {
+  color: var(--sf-cyan, #6de5ff);
+  opacity: 0.9;
+}
+
+.sf-live-arena {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.sf-live-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sf-live-sprite-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.sf-live-sprite {
+  width: 84px;
+  height: 108px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.8));
+}
+
+/* El peleador de la derecha va volteado para que se enfrenten (solo mientras
+   se juega; los sprites KO son frontales y no se flipean). */
+.sf-live-sprite.flipped {
+  transform: scaleX(-1);
+}
+
+/* Sellos WIN / K.O. sobre el sprite al terminar el partido. Arcade look:
+   pixel-y, texto con doble sombra roja/dorada para que se lea contra el
+   stage de fondo. */
+.sf-live-stamp {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-8deg);
+  padding: 3px 10px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  background: rgba(0, 0, 0, 0.75);
+  animation: sf-stamp-in 0.5s var(--ease-spring) both;
+  pointer-events: none;
+}
+
+.sf-live-stamp.ko {
+  color: #ff4d4f;
+  text-shadow: 0 0 8px rgba(255, 77, 79, 0.7);
+}
+
+.sf-live-stamp.win {
+  color: var(--sf-accent, #ffd54d);
+  text-shadow: 0 0 10px rgba(255, 213, 77, 0.7), 1px 1px 0 #b71c1c;
+}
+
+@keyframes sf-stamp-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) rotate(-8deg) scale(1.6);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) rotate(-8deg) scale(1);
+  }
+}
+
+/* El perdedor se atenúa un pelo — su equipo perdió, no compite con la
+   celebración del ganador */
+.sf-live-side.loser .sf-live-sprite {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.9)) grayscale(0.15);
+}
+
+.sf-live-side.loser .sf-live-team,
+.sf-live-side.loser .sf-live-char {
+  opacity: 0.7;
+}
+
+/* El ganador tiene un halo dorado sutil */
+.sf-live-side.winner .sf-live-sprite {
+  filter: drop-shadow(0 0 12px rgba(255, 213, 77, 0.6))
+    drop-shadow(0 3px 6px rgba(0, 0, 0, 0.8));
+}
+
+/* Cuando el partido terminó, el punto rojo del clock deja de pulsar y se
+   pone en color mudo (ya no es 'en vivo') */
+.sf-live-clock.post {
+  color: var(--sf-cyan, #6de5ff);
+}
+
+.sf-live-clock.post .live-dot {
+  background: var(--sf-cyan, #6de5ff);
+  animation: none;
+}
+
+/* La palabra central pasa de VS parpadeante a K.O. estático rojo. Con un
+   pulso inicial dramático cuando aparece. */
+.sf-live-vs-word.ko {
+  color: #ff4d4f;
+  animation: sf-ko-in 0.6s var(--ease-spring) both;
+  text-shadow: 0 0 10px rgba(255, 77, 79, 0.7), 2px 2px 0 #4a0000;
+}
+
+@keyframes sf-ko-in {
+  0% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-live-stamp,
+  .sf-live-vs-word.ko {
+    animation: none;
+  }
+}
+
+.sf-live-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.sf-live-team {
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sf-live-owner {
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  font-weight: 800;
+}
+
+.sf-live-char {
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  color: var(--sf-cyan, #6de5ff);
+  opacity: 0.9;
+}
+
+/* Centro: VS parpadeante + marcador tabular */
+.sf-live-center {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 60px;
+}
+
+.sf-live-vs-word {
+  font-size: 1.2rem;
+  color: var(--sf-accent, #ffd54d);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 8px rgba(255, 213, 77, 0.6), 2px 2px 0 #b71c1c;
+  animation: sf-blink 0.9s steps(2, jump-none) infinite;
+}
+
+.sf-live-score {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+/* Cada número del marcador remonta al cambiar (key={score}) y se anima
+   con score-pop (definido en styles.css cerca de .score) — el bump con
+   flash en rosa dura ~380ms. Suficiente para que se sienta el gol. */
+.sf-live-num {
+  display: inline-block;
+  animation: score-pop var(--dur-slow) var(--ease-spring);
+}
+
+.sf-live-dash {
+  opacity: 0.65;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-live-vs-word {
+    animation: none;
+  }
+}
+
+/* En pantallas muy angostas (iPhone SE) el sprite y meta se aprietan */
+@media (max-width: 380px) {
+  .sf-live-sprite {
+    width: 68px;
+    height: 90px;
+  }
+  .sf-live-vs-word {
+    font-size: 1rem;
+  }
+  .sf-live-score {
+    font-size: 0.95rem;
+  }
+}
+
 /* ── Select your fighter ── */
 .sf-select-title {
   text-align: center;
