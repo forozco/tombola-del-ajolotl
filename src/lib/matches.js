@@ -50,5 +50,15 @@ export function detalleDe(m) {
     finish: ev.finish,
     goals: ev.goals ?? [],
     winnerId: ev.winnerId,
+    venue: ev.venue ?? null,
   }
+}
+
+// Nombre del estadio para mostrar en la UI. Preferimos el fullName (p.ej.
+// "Estadio Azteca") y caemos a la ciudad si es lo único que trae ESPN. Si
+// no hay ni uno ni otro, devolvemos null y la UI lo omite.
+export function venueLabel(match) {
+  const v = match.live?.venue
+  if (!v) return null
+  return v.name || v.city || null
 }
