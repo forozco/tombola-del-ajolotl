@@ -80,7 +80,7 @@ export const VENUES = {
   o3: { name: 'Philadelphia Stadium',            city: 'Philadelphia' },
   o4: { name: 'Los Angeles Stadium',             city: 'Inglewood' },
   o5: { name: 'Miami Stadium',                   city: 'Miami Gardens' },
-  o6: { name: 'Estadio Azteca',                  city: 'Ciudad de México' },
+  o6: { name: 'Estadio Ciudad de México',        city: 'Ciudad de México' },
   o7: { name: 'San Francisco Bay Area Stadium',  city: 'Santa Clara' },
   o8: { name: 'Kansas City Stadium',             city: 'Kansas City' },
   q1: { name: 'Seattle Stadium',                 city: 'Seattle' },

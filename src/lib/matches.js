@@ -55,15 +55,16 @@ export function detalleDe(m) {
 }
 
 // Nombre del estadio para mostrar en la UI. Prioridad:
-//   1. ESPN en tiempo real (event.competitions[0].venue.fullName) — cuando
-//      el evento ya está detallado por ESPN, gana porque puede reflejar
-//      cambios de sede de última hora.
-//   2. Fallback a VENUES en data.js (nomenclatura FIFA-oficial 'clean venue')
-//      — asegura que siempre haya dato desde el minuto 0, incluso en
-//      partidos muy futuros donde ESPN aún no llena el venue.
+//   1. VENUES en data.js (nomenclatura FIFA-oficial 'clean venue') —
+//      MANDA sobre ESPN. Razón: ESPN a veces devuelve el nombre corporativo
+//      vigente ("Estadio Banorte" en lugar de "Estadio Ciudad de México",
+//      "MetLife Stadium" en lugar de "New York New Jersey Stadium"), y
+//      queremos consistencia con lo que FIFA usa durante el torneo.
+//   2. Fallback a ESPN si el partido no está en VENUES (no debería pasar
+//      para el knockout del Mundial 2026, pero es un salvavidas).
 //   3. Como último recurso, la ciudad si ESPN solo dio eso.
 // Si nada devuelve nombre, devolvemos null y la UI omite la línea.
 export function venueLabel(match) {
   const espn = match.live?.venue
-  return espn?.name || VENUES[match.id]?.name || espn?.city || null
+  return VENUES[match.id]?.name || espn?.name || espn?.city || null
 }
