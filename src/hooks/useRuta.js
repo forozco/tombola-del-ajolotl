@@ -3,6 +3,7 @@
 //   /              → pestaña Hoy
 //   /camino        → El Camino, vista cuadro (Bracket)
 //   /camino/lista  → El Camino, vista lista
+//   /camino/sf     → El Camino, vista Street Fighter
 //   /amigos        → Coonstl
 //
 // La URL es la fuente de verdad: un refresh o un link compartido cae en la
@@ -19,14 +20,17 @@ const TITULOS = { hoy: 'Hoy', llaves: 'El Camino', amigos: 'Coonstl' }
 
 export function parseRuta(pathname) {
   if (pathname.startsWith('/camino')) {
-    return { tab: 'llaves', vista: pathname.includes('/lista') ? 'lista' : 'cuadro' }
+    const vista = pathname.includes('/lista') ? 'lista' : pathname.includes('/sf') ? 'sf' : 'cuadro'
+    return { tab: 'llaves', vista }
   }
   if (pathname.startsWith('/amigos')) return { tab: 'amigos', vista: 'cuadro' }
   return { tab: 'hoy', vista: 'cuadro' }
 }
 
 export function rutaDe(tab, vista) {
-  if (tab === 'llaves') return vista === 'lista' ? '/camino/lista' : '/camino'
+  if (tab === 'llaves') {
+    return vista === 'lista' ? '/camino/lista' : vista === 'sf' ? '/camino/sf' : '/camino'
+  }
   if (tab === 'amigos') return '/amigos'
   return '/'
 }

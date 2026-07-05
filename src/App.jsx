@@ -6,6 +6,7 @@
 // mucho más allá de esto.
 
 import { useCallback, useEffect, useMemo } from 'react'
+import { flushSync } from 'react-dom'
 import { computeBracket } from './lib/bracket.js'
 import { marcadorTexto, detalleDe } from './lib/matches.js'
 import { useResults } from './hooks/useResults.js'
@@ -36,10 +37,34 @@ export default function App() {
   useScrollPorRuta(rutaDe(tab, vista))
 
   // Publica la pestaña en <html> para que el CSS pueda ajustar el ticker /
-  // latido según qué esté visible (ver styles.css > .live-ticker).
+  // latido según qué esté visible (ver styles.css > .live-ticker). El modo
+  // Street Fighter (data-sf) retematiza TODA la app vía variables CSS.
+  const esSF = (t, v) => t === 'llaves' && v === 'sf'
   useEffect(() => {
     document.documentElement.dataset.tab = tab
-  }, [tab])
+    if (esSF(tab, vista)) document.documentElement.dataset.sf = '1'
+    else delete document.documentElement.dataset.sf
+  }, [tab, vista])
+
+  // Entrar o salir del modo Street Fighter cruza con un fundido de página
+  // completa (View Transitions API). flushSync obliga a React a pintar el
+  // nuevo estado dentro del snapshot de la transición; sin soporte del
+  // navegador, cambia directo sin drama.
+  const conFundido = useCallback((fn, cambiaModo) => {
+    if (cambiaModo && document.startViewTransition) {
+      document.startViewTransition(() => flushSync(fn))
+    } else {
+      fn()
+    }
+  }, [])
+  const cambiarTab = useCallback(
+    (t) => conFundido(() => setTab(t), esSF(t, vista) !== esSF(tab, vista)),
+    [conFundido, setTab, tab, vista]
+  )
+  const cambiarVista = useCallback(
+    (v) => conFundido(() => setVista(v), esSF(tab, v) !== esSF(tab, vista)),
+    [conFundido, setVista, tab, vista]
+  )
 
   // Estado derivado que casi todos los componentes reciben. useMemo evita
   // recomputar cuando ninguna de sus 3 fuentes cambia.
@@ -81,7 +106,7 @@ export default function App() {
   // Handler del ticker: cambia a la pestaña Hoy y hace scroll a la card del
   // partido. Se usa setTimeout mínimo para dejar que Hoy monte antes.
   const scrollToMatch = (m) => {
-    setTab('hoy')
+    cambiarTab('hoy')
     setTimeout(() => {
       document
         .getElementById(`match-${m.id}`)
@@ -100,7 +125,7 @@ export default function App() {
         tituloTema={tituloTema}
       />
       <ChampionBanner championTeamId={bracket.champion} />
-      <TabBar tab={tab} setTab={setTab} />
+      <TabBar tab={tab} setTab={cambiarTab} />
       <LiveTicker bracket={bracket} onVer={scrollToMatch} />
 
       {/* key={tab} fuerza remount del contenido al cambiar de pestaña, que
@@ -108,7 +133,7 @@ export default function App() {
       <div className="tab-content" key={tab}>
         {tab === 'hoy' && <Hoy bracket={bracket} onPick={pick} />}
         {tab === 'llaves' && (
-          <Llaves bracket={bracket} vista={vista} setVista={setVista} onPick={pick} />
+          <Llaves bracket={bracket} vista={vista} setVista={cambiarVista} onPick={pick} />
         )}
         {tab === 'amigos' && <Amigos bracket={bracket} />}
       </div>
