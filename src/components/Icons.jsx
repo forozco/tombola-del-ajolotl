@@ -79,3 +79,27 @@ export function IconPin() {
     </svg>
   )
 }
+
+// Joystick estilo cabinete arcade: bola + palanca + base. Se usa en el
+// botoncito easter egg de la vista Street Fighter (bonus stage del auto).
+// Pixel-y por dentro (rectángulos con esquinas rectas).
+export function IconJoystick() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="6" r="3" fill="currentColor" />
+      <path d="M12 9v7" />
+      <rect x="6" y="16" width="12" height="4" fill="currentColor" opacity="0.35" />
+      <rect x="6" y="16" width="12" height="4" />
+    </svg>
+  )
+}

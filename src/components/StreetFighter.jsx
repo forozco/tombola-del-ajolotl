@@ -12,8 +12,11 @@ import { OWNERS, OWNER_BY_TEAM, ROUNDS, TEAMS } from '../data.js'
 import { FIGHTERS } from '../sf.js'
 import { fechaCorta, todayStr } from '../lib/dates.js'
 import { finishLabel } from '../lib/matches.js'
-import { AHORA, ES_SIM } from '../lib/modes.js'
+import { AHORA, ES_BONUS, ES_SIM } from '../lib/modes.js'
+import { haptic } from '../haptics.js'
 import { Bandera } from './Bandera.jsx'
+import { IconJoystick } from './Icons.jsx'
+import { BonusStage } from './BonusStage.jsx'
 
 // ── Panel de pelea EN VIVO estilo arcade ──────────────────────────────────
 // Se muestra encima del roster cuando hay un partido en curso. Reproduce la
@@ -250,7 +253,41 @@ function NextFightPanel({ bracket }) {
         <NextFighter teamId={next.awayTeam} side="away" />
       </div>
       <div className="sf-next-getready">GET READY!</div>
+      <BonusStageTrigger />
     </div>
+  )
+}
+
+// ── Easter egg trigger ────────────────────────────────────────────────────
+// Botoncito discreto con forma de joystick en la esquina del NEXT FIGHT que,
+// al tocarse, abre el bonus stage clásico (destruir el auto). Es un secreto
+// que la mayoría de usuarios va a descubrir por accidente — de eso se trata
+// el easter egg.
+
+// Modo prueba: monta el Bonus Stage abierto de entrada; con EXIT se cierra y
+// queda la vista SF normal (recargar la URL con ?bonus lo vuelve a abrir).
+function BonusStageTestMode() {
+  const [open, setOpen] = useState(true)
+  return open ? <BonusStage onClose={() => setOpen(false)} /> : null
+}
+
+function BonusStageTrigger() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button
+        className="sf-bonus-trigger"
+        onClick={() => {
+          haptic.medium()
+          setOpen(true)
+        }}
+        aria-label="Bonus stage (easter egg)"
+        title="???"
+      >
+        <IconJoystick />
+      </button>
+      {open && <BonusStage onClose={() => setOpen(false)} />}
+    </>
   )
 }
 
@@ -395,6 +432,9 @@ export function StreetFighter({ bracket }) {
 
       <LiveVsPanel bracket={bracket} />
       <NextFightPanel bracket={bracket} />
+      {/* Modo prueba (?bonus): abre el juego directo, sin depender de que el
+          panel NEXT FIGHT esté visible (con pelea live/aftermath no se monta) */}
+      {ES_BONUS ? <BonusStageTestMode /> : null}
 
       <div className="sf-select-title">SELECT YOUR FIGHTER</div>
       <div className="sf-roster">

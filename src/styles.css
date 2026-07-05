@@ -2589,6 +2589,695 @@ body {
   }
 }
 
+/* ── Bonus Stage · easter egg del auto ─────────────────────────────────────
+   Trigger discreto en el NEXT FIGHT panel + modal fullscreen con el bonus
+   stage clásico de Street Fighter II. Mecánica en BonusStage.jsx; aquí solo
+   el look arcade. */
+
+/* Botón joystick en la esquina superior derecha del NEXT FIGHT panel */
+.sf-bonus-trigger {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--sf-cyan);
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--sf-cyan);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.sf-bonus-trigger:hover,
+.sf-bonus-trigger:focus-visible {
+  opacity: 1;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--sf-cyan) 60%, transparent);
+}
+
+.sf-bonus-trigger:active {
+  transform: scale(0.9);
+}
+
+/* Overlay fullscreen del bonus stage */
+.sf-bonus-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  animation: sf-bonus-in 0.28s var(--ease-out) both;
+}
+
+@keyframes sf-bonus-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sf-bonus-scene {
+  /* Factor de escala de sprites/arena: sube en tablet y desktop */
+  --zoom: 1;
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  padding-top: max(env(safe-area-inset-top), 20px);
+  padding-bottom: max(env(safe-area-inset-bottom), 20px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* Fondo negro por si el SVG del escenario (BonusScene) tarda en pintar */
+  background: #0a0a15;
+  color: var(--sf-text, #fff);
+  font-family: 'Press Start 2P', monospace;
+  overflow: hidden;
+}
+
+/* Tablet (iPad / iPad Pro vertical) y desktop: escena más ancha y sprites
+   más grandes. El resto del layout escala vía --zoom. */
+@media (min-width: 768px) {
+  .sf-bonus-scene {
+    max-width: 640px;
+    --zoom: 1.3;
+  }
+}
+
+@media (min-width: 1100px) {
+  .sf-bonus-scene {
+    max-width: 760px;
+    --zoom: 1.55;
+  }
+}
+
+/* Escenario SVG del muelle: vive DENTRO del arena, anclado al fondo
+   (YMax slice = cover con el piso de madera siempre bajo los pies) */
+.sf-bonus-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+.sf-bonus-scene > *:not(.sf-bonus-bg) {
+  position: relative;
+  z-index: 1;
+}
+
+/* HUD arcade estilo cabinete: 3 bloques con label + valor */
+.sf-bonus-hud {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.sf-bonus-hud-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 4px;
+  border: 2px solid var(--sf-line, #4a3b3b);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+}
+
+.sf-bonus-hud-label {
+  font-size: 0.45rem;
+  letter-spacing: 0.12em;
+  color: var(--sf-dim, #9a8a8a);
+}
+
+.sf-bonus-hud-value {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+.sf-bonus-time {
+  color: var(--sf-cyan);
+  text-shadow: 0 0 4px color-mix(in srgb, var(--sf-cyan) 60%, transparent);
+}
+
+.sf-bonus-hits {
+  color: var(--sf-accent, #ffd54d);
+  text-shadow: 0 0 4px color-mix(in srgb, var(--sf-accent) 60%, transparent);
+}
+
+.sf-bonus-score {
+  color: #ff4d4f;
+  text-shadow: 0 0 4px rgba(255, 77, 79, 0.6);
+}
+
+.sf-bonus-title {
+  text-align: center;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  color: var(--sf-accent, #ffd54d);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--sf-accent) 55%, transparent),
+    2px 2px 0 var(--sf-red, #b71c1c);
+  animation: sf-blink 1.2s steps(2, jump-none) infinite;
+}
+
+.sf-bonus-subtitle {
+  text-align: center;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  color: var(--sf-cyan);
+  margin-top: -6px;
+}
+
+/* Área de juego: piso + Ryu + auto */
+.sf-bonus-arena {
+  position: relative;
+  flex: 1;
+  min-height: calc(240px * var(--zoom));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 40px;
+  overflow: hidden;
+  /* Piso con línea de horizonte */
+  border-bottom: 3px solid rgba(0, 0, 0, 0.5);
+}
+
+/* Ryu con frames reales del arcade: el wrapper ancla los pies al piso y el
+   img se dibuja a tamaño nativo escalado (los PNG ya vienen alineados al
+   baseline de su fila del sheet, así ningún frame "flota" al cambiar). */
+.sf-bonus-ryu-sprite {
+  position: absolute;
+  left: 2%;
+  bottom: 40px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sf-bonus-ryu-sprite img {
+  display: block;
+  image-rendering: pixelated;
+  transform: scale(calc(1.8 * var(--zoom)));
+  transform-origin: bottom left;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8));
+}
+
+/* En el hadouken Ryu se planta con más presencia (los frames son más anchos) */
+.sf-bonus-ryu-sprite[data-anim='hado'] img {
+  transform: scale(calc(1.8 * var(--zoom))) translateX(-4px);
+}
+
+/* Los especiales desplazan a Ryu hacia el auto y de regreso. --lunge es la
+   distancia del lance, acotada para pantallas chicas. */
+.sf-bonus-ryu-sprite {
+  --lunge: min(calc(130px * var(--zoom)), 32vw);
+}
+
+.sf-bonus-ryu-sprite[data-anim='shoryu'] {
+  animation: sf-bonus-shoryu-move 0.74s ease-out both;
+}
+
+@keyframes sf-bonus-shoryu-move {
+  0% { transform: translate(0, 0); }
+  30% { transform: translate(var(--lunge), 0); }
+  55% { transform: translate(var(--lunge), calc(-64px * var(--zoom))); }
+  82% { transform: translate(var(--lunge), -8px); }
+  100% { transform: translate(0, 0); }
+}
+
+.sf-bonus-ryu-sprite[data-anim='tatsu'] {
+  animation: sf-bonus-tatsu-move 0.94s ease-in-out both;
+}
+
+@keyframes sf-bonus-tatsu-move {
+  0% { transform: translate(0, 0); }
+  35% { transform: translate(calc(var(--lunge) * 0.75), -18px); }
+  72% { transform: translate(var(--lunge), -10px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* El "hitzone" es el botón que envuelve al auto: cubre toda su área. En
+   click, propagamos coords del pointer para spawnear la chispa donde tocó. */
+.sf-bonus-hitzone {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  z-index: 1;
+  /* Sin el press-down del botón global para que sea el auto quien tiemble */
+  transition: none;
+}
+
+.sf-bonus-hitzone:not(:disabled):active {
+  transform: none;
+}
+
+.sf-bonus-car {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: calc(300px * var(--zoom));
+  min-height: calc(170px * var(--zoom));
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.7));
+  transition: transform 0.15s var(--ease-out);
+}
+
+/* Sprite real del sedán de SSF2: cada frame de daño tiene alto distinto y el
+   anclaje inferior hace que el auto "se hunda" solo conforme colapsa. */
+.sf-bonus-car-img {
+  display: block;
+  image-rendering: pixelated;
+  transform: scale(calc(1.55 * var(--zoom)));
+  transform-origin: bottom center;
+}
+
+.sf-bonus-car.shake {
+  animation: sf-bonus-shake 0.18s ease-out;
+}
+
+@keyframes sf-bonus-shake {
+  0% { transform: translate(0, 0) rotate(0); }
+  20% { transform: translate(-3px, 2px) rotate(-1.5deg); }
+  40% { transform: translate(4px, -1px) rotate(1.5deg); }
+  60% { transform: translate(-2px, 2px) rotate(-0.8deg); }
+  80% { transform: translate(2px, -2px) rotate(0.8deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* Chispa de impacto: los 3 frames reales del sheet apilados; cada uno se
+   muestra ~0.12s en secuencia (opacity con steps) y el conjunto desaparece. */
+.sf-bonus-spark {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(calc(1.6 * var(--zoom)));
+  pointer-events: none;
+  z-index: 3;
+}
+
+.sf-bonus-spark.big {
+  transform: translate(-50%, -50%) scale(calc(2.4 * var(--zoom)));
+}
+
+.sf-bonus-spark-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+  opacity: 0;
+  animation: sf-bonus-spark-frame 0.12s steps(1) forwards;
+}
+
+.sf-bonus-spark-frame.f1 { animation-delay: 0.12s; }
+.sf-bonus-spark-frame.f2 { animation-delay: 0.24s; }
+
+@keyframes sf-bonus-spark-frame {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Escombros y vidrios que salen volando del punto de impacto */
+.sf-bonus-particle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 4;
+  animation: sf-bonus-debris 0.72s ease-out forwards;
+}
+
+.sf-bonus-particle.tire {
+  animation-duration: 0.9s;
+  z-index: 5;
+}
+
+@keyframes sf-bonus-debris {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+    opacity: 1;
+  }
+  55% {
+    transform: translate(calc(-50% + var(--dx) * 0.7), calc(-50% + var(--dy)))
+      rotate(calc(var(--rot) * 0.6));
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) * 0.2 + 70px))
+      rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+/* Score flotante "+100" en el punto del golpe */
+.sf-bonus-pop {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 6;
+  font-size: 0.5rem;
+  color: var(--sf-accent, #ffd54d);
+  text-shadow: 1px 1px 0 #000;
+  animation: sf-bonus-pop 0.7s ease-out forwards;
+}
+
+@keyframes sf-bonus-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  20% { opacity: 1; transform: translate(-50%, -80%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -180%) scale(1); }
+}
+
+/* Contador de combo estilo "N HITS!" del arcade */
+.sf-bonus-combo {
+  position: absolute;
+  top: 8px;
+  left: 4px;
+  z-index: 6;
+  font-size: 0.8rem;
+  color: var(--sf-accent, #ffd54d);
+  text-shadow: 2px 2px 0 var(--sf-red, #b71c1c);
+  animation: sf-bonus-combo-in 0.25s var(--ease-spring) both;
+  pointer-events: none;
+}
+
+@keyframes sf-bonus-combo-in {
+  from { opacity: 0; transform: scale(1.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Fireball del hadouken: cruza desde las manos de Ryu hasta el auto con dos
+   frames reales parpadeando (la cola del proyectil del arcade). */
+.sf-bonus-fireball {
+  position: absolute;
+  left: calc(2% + 100px * var(--zoom));
+  bottom: calc(40px + 70px * var(--zoom));
+  z-index: 5;
+  pointer-events: none;
+  animation: sf-bonus-fireball-fly 0.46s linear forwards;
+}
+
+@keyframes sf-bonus-fireball-fly {
+  from { transform: translateX(0); }
+  to { transform: translateX(var(--fb-dist)); }
+}
+
+.sf-bonus-fb-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  image-rendering: pixelated;
+  transform: scale(calc(1.8 * var(--zoom)));
+  animation: sf-bonus-fb-flicker 0.16s steps(1) infinite;
+}
+
+.sf-bonus-fb-frame.f1 { animation-delay: 0.08s; }
+
+@keyframes sf-bonus-fb-flicker {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* Flash de pantalla al conectar el hadouken o destruir el auto */
+.sf-bonus-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: #fff;
+  pointer-events: none;
+  animation: sf-bonus-flash 0.35s ease-out forwards;
+}
+
+@keyframes sf-bonus-flash {
+  0% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+/* Medidor SUPER: se llena a golpes y parpadea cuando el hadouken está listo */
+.sf-bonus-super-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sf-bonus-super-label {
+  font-size: 0.45rem;
+  letter-spacing: 0.12em;
+  color: var(--sf-dim, #9a8a8a);
+}
+
+.sf-bonus-super-bar {
+  flex: 1;
+  height: 8px;
+  border: 2px solid var(--sf-line, #4a3b3b);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sf-bonus-super-bar.ready {
+  border-color: var(--sf-cyan);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--sf-cyan) 60%, transparent);
+  animation: sf-blink 0.6s steps(2, jump-none) infinite;
+}
+
+.sf-bonus-super-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1e88e5 0%, var(--sf-cyan, #4dd0e1) 100%);
+  transition: width 0.2s var(--ease-out);
+}
+
+/* Botonera arcade: básicos (PUNCH/KICK) + fila de especiales con costo */
+.sf-bonus-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.sf-bonus-specials {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+/* Chip con el costo en barras del medidor */
+.sf-bonus-cost {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 0.45rem;
+  vertical-align: middle;
+}
+
+.sf-bonus-btn {
+  padding: 12px 4px;
+  border-radius: 6px;
+  border: 2px solid;
+  background: rgba(0, 0, 0, 0.6);
+  font-family: inherit;
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sf-bonus-btn:active {
+  transform: translateY(2px) scale(0.96);
+}
+
+.sf-bonus-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.sf-bonus-btn.punch {
+  border-color: #ff4d4f;
+  color: #ff4d4f;
+}
+
+.sf-bonus-btn.kick {
+  border-color: var(--sf-cyan, #4dd0e1);
+  color: var(--sf-cyan, #4dd0e1);
+}
+
+.sf-bonus-btn.hado {
+  border-color: var(--sf-accent, #ffd54d);
+  color: var(--sf-accent, #ffd54d);
+}
+
+.sf-bonus-btn.shoryu {
+  border-color: #ff9800;
+  color: #ff9800;
+}
+
+.sf-bonus-btn.tatsu {
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+/* Especial pagable: se ilumina sin parpadear (el blink queda solo para el
+   hadouken de medidor lleno, que es el evento grande) */
+.sf-bonus-btn.shoryu.ready,
+.sf-bonus-btn.tatsu.ready {
+  box-shadow: 0 0 10px color-mix(in srgb, currentColor 55%, transparent);
+}
+
+.sf-bonus-btn.hado.ready {
+  background: var(--sf-accent, #ffd54d);
+  color: #000;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--sf-accent) 70%, transparent);
+  animation: sf-blink 0.6s steps(2, jump-none) infinite;
+}
+
+/* Barra de daño estilo lifebar del arcade: amarillo → rojo al fill */
+.sf-bonus-damage-bar {
+  height: 12px;
+  border: 2px solid var(--sf-line, #4a3b3b);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sf-bonus-damage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd54d 0%, #ff4d4f 100%);
+  transition: width 0.25s var(--ease-out);
+}
+
+/* Overlay de fin de juego (Cleared / Time Up): centrado vertical real y con
+   ancho acotado para que no se descuadre en pantallas altas o anchas */
+.sf-bonus-endgame {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 46%;
+  max-width: 420px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 3px solid var(--sf-accent);
+  border-radius: 8px;
+  text-align: center;
+  z-index: 10;
+  transform: translateY(-50%);
+  animation: sf-bonus-endgame-in 0.4s var(--ease-spring) both;
+  box-shadow: 0 0 30px color-mix(in srgb, var(--sf-accent) 40%, transparent);
+}
+
+@keyframes sf-bonus-endgame-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+.sf-bonus-endgame-title {
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  color: var(--sf-accent);
+  text-shadow: 2px 2px 0 var(--sf-red);
+}
+
+.sf-bonus-endgame-title.cleared {
+  color: #4caf50;
+  text-shadow: 2px 2px 0 #1b5e20;
+}
+
+.sf-bonus-endgame-title.timeup {
+  color: #ff4d4f;
+  text-shadow: 2px 2px 0 #4a0000;
+}
+
+.sf-bonus-endgame-bonus,
+.sf-bonus-endgame-score,
+.sf-bonus-endgame-best {
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: var(--sf-cyan);
+}
+
+.sf-bonus-endgame-best {
+  color: var(--sf-accent);
+  animation: sf-blink 0.8s steps(2, jump-none) infinite;
+}
+
+/* Footer con instrucción/exit */
+.sf-bonus-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.sf-bonus-instruction {
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  color: var(--sf-dim, #9a8a8a);
+}
+
+.sf-bonus-exit {
+  padding: 8px 14px;
+  border: 2px solid var(--sf-accent, #ffd54d);
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--sf-accent, #ffd54d);
+  font-family: inherit;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sf-bonus-exit:active {
+  transform: scale(0.94);
+  background: var(--sf-accent);
+  color: #000;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-bonus-title,
+  .sf-bonus-endgame-best,
+  .sf-bonus-car.shake,
+  .sf-bonus-super-bar.ready,
+  .sf-bonus-btn.hado.ready,
+  .sf-bonus-ryu-sprite[data-anim='shoryu'],
+  .sf-bonus-ryu-sprite[data-anim='tatsu'] {
+    animation: none;
+  }
+
+  /* Las partículas y el proyectil dependen de su animación para moverse y
+     desaparecer: con reduced-motion mejor no dibujarlas. */
+  .sf-bonus-particle,
+  .sf-bonus-fireball,
+  .sf-bonus-flash {
+    display: none;
+  }
+}
+
 @keyframes sf-pulse {
   50% {
     box-shadow: 0 0 16px color-mix(in srgb, var(--sf-gold) 55%, transparent);
