@@ -7,9 +7,91 @@
 //     con tarjetas de pelea: VS parpadeante antes de pelear, barras de vida
 //     con FIGHT! en vivo, y retrato golpeado del continue screen al perder.
 
-import { OWNERS, OWNER_BY_TEAM, ROUNDS } from '../data.js'
+import { OWNERS, OWNER_BY_TEAM, ROUNDS, TEAMS } from '../data.js'
 import { FIGHTERS } from '../sf.js'
 import { fechaCorta } from '../lib/dates.js'
+import { Bandera } from './Bandera.jsx'
+
+// ── Panel de pelea EN VIVO estilo arcade ──────────────────────────────────
+// Se muestra encima del roster cuando hay un partido en curso. Reproduce la
+// pantalla VS de Street Fighter: dos peleadores frente a frente sobre el
+// escenario del anfitrión, con banderas, marcador y minuto. Si hay más de
+// un partido en vivo, se apilan.
+
+function LiveVsFighter({ teamId, side }) {
+  const owner = OWNER_BY_TEAM[teamId]
+  const f = FIGHTERS[owner.id]
+  const team = TEAMS[teamId]
+  return (
+    <div className={`sf-live-side sf-live-${side}`}>
+      <img
+        className={`sf-live-sprite${f.pixelated ? ' pixelated' : ''}${side === 'away' ? ' flipped' : ''}`}
+        src={f.stance}
+        alt={f.fighter}
+      />
+      <div className="sf-live-meta">
+        <span className="sf-live-team">
+          <Bandera teamId={teamId} /> {team?.name ?? ''}
+        </span>
+        <span className="sf-live-owner" style={{ color: owner.color }}>
+          {owner.name}
+        </span>
+        <span className="sf-live-char">{f.fighter}</span>
+      </div>
+    </div>
+  )
+}
+
+function LiveVsCard({ match }) {
+  if (!match.homeTeam || !match.awayTeam) return null
+  const homeOwner = OWNER_BY_TEAM[match.homeTeam]
+  const stageFighter = FIGHTERS[homeOwner.id]
+  const ev = match.live
+  const sh = ev?.shootout ?? {}
+  const enPenales = Object.values(sh).some((v) => v != null)
+  const clockLabel = enPenales
+    ? `PENALES ${sh[match.homeTeam] ?? 0}-${sh[match.awayTeam] ?? 0}`
+    : ev?.halftime
+      ? 'MEDIO TIEMPO'
+      : `FIGHT! · ${ev?.clock ?? ''}`
+  const homeScore = ev?.score?.[match.homeTeam] ?? 0
+  const awayScore = ev?.score?.[match.awayTeam] ?? 0
+  return (
+    <div
+      className="sf-live-card"
+      style={{ '--sf-live-stage': `url(${stageFighter.stage})` }}
+    >
+      <div className="sf-live-topbar">
+        <span className="sf-live-clock">
+          <span className="live-dot" /> {clockLabel}
+        </span>
+        <span className="sf-live-stage-label">{stageFighter.city}</span>
+      </div>
+      <div className="sf-live-arena">
+        <LiveVsFighter teamId={match.homeTeam} side="home" />
+        <div className="sf-live-center">
+          <div className="sf-live-vs-word">VS</div>
+          <div className="sf-live-score">
+            {homeScore} <span className="sf-live-dash">–</span> {awayScore}
+          </div>
+        </div>
+        <LiveVsFighter teamId={match.awayTeam} side="away" />
+      </div>
+    </div>
+  )
+}
+
+function LiveVsPanel({ bracket }) {
+  const enVivo = bracket.resolved.filter((m) => m.live?.state === 'in')
+  if (!enVivo.length) return null
+  return (
+    <div className="sf-live-vs">
+      {enVivo.map((m) => (
+        <LiveVsCard key={m.id} match={m} />
+      ))}
+    </div>
+  )
+}
 
 // ── Roster (select your fighter) ───────────────────────────────────────────
 
@@ -149,6 +231,8 @@ export function StreetFighter({ bracket }) {
     <div className="sf-arcade">
       <div className="sf-marquee">STREET FIGHTER</div>
       <div className="sf-submarquee">TÓMBOLA DEL AJOLOTL EDITION</div>
+
+      <LiveVsPanel bracket={bracket} />
 
       <div className="sf-select-title">SELECT YOUR FIGHTER</div>
       <div className="sf-roster">
