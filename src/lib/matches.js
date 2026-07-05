@@ -2,7 +2,7 @@
 // Se usan tanto en la UI (finishLabel) como al persistir en Supabase
 // (marcadorTexto, detalleDe).
 
-import { TEAMS } from '../data.js'
+import { TEAMS, VENUES } from '../data.js'
 
 // Cómo terminó el partido, para mostrar bajo el marcador cuando ya acabó.
 // "Final · penales 4-2 para Marruecos", "Final · en tiempo extra", etc.
@@ -54,11 +54,16 @@ export function detalleDe(m) {
   }
 }
 
-// Nombre del estadio para mostrar en la UI. Preferimos el fullName (p.ej.
-// "Estadio Azteca") y caemos a la ciudad si es lo único que trae ESPN. Si
-// no hay ni uno ni otro, devolvemos null y la UI lo omite.
+// Nombre del estadio para mostrar en la UI. Prioridad:
+//   1. ESPN en tiempo real (event.competitions[0].venue.fullName) — cuando
+//      el evento ya está detallado por ESPN, gana porque puede reflejar
+//      cambios de sede de última hora.
+//   2. Fallback a VENUES en data.js (nomenclatura FIFA-oficial 'clean venue')
+//      — asegura que siempre haya dato desde el minuto 0, incluso en
+//      partidos muy futuros donde ESPN aún no llena el venue.
+//   3. Como último recurso, la ciudad si ESPN solo dio eso.
+// Si nada devuelve nombre, devolvemos null y la UI omite la línea.
 export function venueLabel(match) {
-  const v = match.live?.venue
-  if (!v) return null
-  return v.name || v.city || null
+  const espn = match.live?.venue
+  return espn?.name || VENUES[match.id]?.name || espn?.city || null
 }

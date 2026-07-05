@@ -90,25 +90,28 @@ function simPosesion(m, tSeg) {
   return { home, away: 100 - home }
 }
 
-// Estadios ficticios asignados por equipo anfitrión (los reales del
-// Mundial 2026, en USA, Canadá y México, para dar variedad al demo).
+// Estadios FIFA-oficiales del Mundial 2026 asignados por equipo anfitrión
+// (para dar variedad al demo). Nomenclatura FIFA "clean venue": los nombres
+// comerciales (MetLife, SoFi, AT&T, etc.) se reemplazan por "[Ciudad] Stadium"
+// durante el torneo. Es lo que ESPN devolverá en producción, así que el demo
+// se ve idéntico al real.
 const STADIUMS = {
-  can: { name: 'BMO Field', city: 'Toronto' },
-  mar: { name: 'Estadio Akron', city: 'Guadalajara' },
-  par: { name: 'Rose Bowl Stadium', city: 'Pasadena' },
-  fra: { name: 'MetLife Stadium', city: 'East Rutherford' },
-  bra: { name: 'AT&T Stadium', city: 'Arlington' },
-  nor: { name: 'Levi’s Stadium', city: 'Santa Clara' },
+  can: { name: 'Toronto Stadium', city: 'Toronto' },
+  mar: { name: 'Estadio Guadalajara', city: 'Guadalajara' },
+  par: { name: 'Boston Stadium', city: 'Foxborough' },
+  fra: { name: 'Los Angeles Stadium', city: 'Inglewood' },
+  bra: { name: 'Dallas Stadium', city: 'Arlington' },
+  nor: { name: 'San Francisco Bay Area Stadium', city: 'Santa Clara' },
   mex: { name: 'Estadio Azteca', city: 'Ciudad de México' },
-  eng: { name: 'Estadio BBVA', city: 'Monterrey' },
-  por: { name: 'SoFi Stadium', city: 'Inglewood' },
-  esp: { name: 'Lumen Field', city: 'Seattle' },
-  usa: { name: 'Mercedes-Benz Stadium', city: 'Atlanta' },
-  bel: { name: 'Hard Rock Stadium', city: 'Miami Gardens' },
-  arg: { name: 'Lincoln Financial Field', city: 'Philadelphia' },
-  egy: { name: 'BC Place', city: 'Vancouver' },
-  sui: { name: 'Gillette Stadium', city: 'Foxborough' },
-  col: { name: 'GEHA Field at Arrowhead Stadium', city: 'Kansas City' },
+  eng: { name: 'Estadio Monterrey', city: 'Monterrey' },
+  por: { name: 'Philadelphia Stadium', city: 'Philadelphia' },
+  esp: { name: 'Seattle Stadium', city: 'Seattle' },
+  usa: { name: 'Atlanta Stadium', city: 'Atlanta' },
+  bel: { name: 'Miami Stadium', city: 'Miami Gardens' },
+  arg: { name: 'Houston Stadium', city: 'Houston' },
+  egy: { name: 'Vancouver Stadium', city: 'Vancouver' },
+  sui: { name: 'Kansas City Stadium', city: 'Kansas City' },
+  col: { name: 'New York New Jersey Stadium', city: 'East Rutherford' },
 }
 
 export function simLive(tSeg = (Date.now() - START) / 1000) {
