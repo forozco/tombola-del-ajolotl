@@ -102,7 +102,7 @@ const STADIUMS = {
   fra: { name: 'Los Angeles Stadium', city: 'Inglewood' },
   bra: { name: 'Dallas Stadium', city: 'Arlington' },
   nor: { name: 'San Francisco Bay Area Stadium', city: 'Santa Clara' },
-  mex: { name: 'Estadio Azteca', city: 'Ciudad de México' },
+  mex: { name: 'Estadio Ciudad de México', city: 'Ciudad de México' },
   eng: { name: 'Estadio Monterrey', city: 'Monterrey' },
   por: { name: 'Philadelphia Stadium', city: 'Philadelphia' },
   esp: { name: 'Seattle Stadium', city: 'Seattle' },
