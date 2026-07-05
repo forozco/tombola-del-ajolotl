@@ -6,6 +6,10 @@ import { TEAMS, VENUES } from '../data.js'
 
 // Cómo terminó el partido, para mostrar bajo el marcador cuando ya acabó.
 // "Final · penales 4-2 para Marruecos", "Final · en tiempo extra", etc.
+// Para tiempo regular decimos solo "Final" — antes decía "en los 90 minutos"
+// pero era engañoso porque los partidos casi siempre duran más (stoppage /
+// tiempo agregado). Ahora solo diferenciamos los casos que sí extendieron
+// la duración: tiempo extra o penales.
 export function finishLabel(match) {
   const ev = match.live
   if (!ev || ev.state !== 'post') return null
@@ -19,7 +23,7 @@ export function finishLabel(match) {
     return `Final · penales ${marcadorPens}${ganador ? ` para ${ganador.name}` : ''}`
   }
   if (ev.finish === 'aet') return 'Final · en tiempo extra'
-  return 'Final · en los 90 minutos'
+  return 'Final'
 }
 
 // Texto compacto del marcador final: "2-1", "1-1 (pen 4-2)", "2-1 (t. extra)".
