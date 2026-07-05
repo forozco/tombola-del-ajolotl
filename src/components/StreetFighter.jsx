@@ -7,10 +7,12 @@
 //     con tarjetas de pelea: VS parpadeante antes de pelear, barras de vida
 //     con FIGHT! en vivo, y retrato golpeado del continue screen al perder.
 
+import { useEffect, useState } from 'react'
 import { OWNERS, OWNER_BY_TEAM, ROUNDS, TEAMS } from '../data.js'
 import { FIGHTERS } from '../sf.js'
 import { fechaCorta, todayStr } from '../lib/dates.js'
 import { finishLabel } from '../lib/matches.js'
+import { AHORA, ES_SIM } from '../lib/modes.js'
 import { Bandera } from './Bandera.jsx'
 
 // ── Panel de pelea EN VIVO estilo arcade ──────────────────────────────────
@@ -135,6 +137,119 @@ function LiveVsPanel({ bracket }) {
       {cards.map((m) => (
         <LiveVsCard key={m.id} match={m} />
       ))}
+    </div>
+  )
+}
+
+// ── NEXT FIGHT: attract mode del arcade ────────────────────────────────────
+// Cuando NO hay match en vivo y NO hay aftermath del día, mostramos un panel
+// tipo "attract mode" con el próximo partido: dos peleadores esperando en
+// pose stance, un countdown LED en pixel-font y un GET READY! parpadeante.
+// Se re-renderiza cada segundo para que el reloj corra.
+
+// Formatea el tiempo restante para el arcade display. Si falta más de un día,
+// prefija con "XD · " (evita mostrar 72:00:00 h y volverse ilegible).
+function formatearCuenta(ms) {
+  if (ms <= 0) return null
+  const totalSeg = Math.floor(ms / 1000)
+  const dias = Math.floor(totalSeg / 86_400)
+  const horas = Math.floor((totalSeg % 86_400) / 3_600)
+  const mins = Math.floor((totalSeg % 3_600) / 60)
+  const segs = totalSeg % 60
+  const p2 = (n) => String(n).padStart(2, '0')
+  const hms = `${p2(horas)}:${p2(mins)}:${p2(segs)}`
+  return dias > 0 ? { prefix: `${dias}D`, hms } : { prefix: null, hms }
+}
+
+function NextFighter({ teamId, side }) {
+  const owner = OWNER_BY_TEAM[teamId]
+  const f = FIGHTERS[owner.id]
+  const team = TEAMS[teamId]
+  const shouldFlip = side === 'away'
+  return (
+    <div className={`sf-next-side sf-next-${side}`}>
+      <div className="sf-next-sprite-wrap">
+        <img
+          className={`sf-next-sprite${f.pixelated ? ' pixelated' : ''}${shouldFlip ? ' flipped' : ''}`}
+          src={f.stance}
+          alt={f.fighter}
+        />
+      </div>
+      <div className="sf-next-meta">
+        <span className="sf-next-team">
+          <Bandera teamId={teamId} /> {team?.name ?? ''}
+        </span>
+        <span className="sf-next-owner" style={{ color: owner.color }}>
+          {owner.name}
+        </span>
+        <span className="sf-next-char">{f.fighter}</span>
+      </div>
+    </div>
+  )
+}
+
+function NextFightPanel({ bracket }) {
+  // Prioridad: si hay live o aftermath del día, este panel no aparece
+  // (LiveVsPanel se encarga de esos estados).
+  const hayLive = bracket.resolved.some((m) => m.live?.state === 'in')
+  const hoy = todayStr()
+  const hayAftermath = bracket.resolved.some((m) => m.winner && m.date === hoy)
+  const [now, setNow] = useState(() => AHORA())
+
+  useEffect(() => {
+    if (hayLive || hayAftermath) return undefined
+    // En modo sim (?simular) el reloj avanza mucho más rápido — actualizamos
+    // más seguido para que el countdown se sienta en tiempo real
+    const t = setInterval(() => setNow(AHORA()), ES_SIM ? 200 : 1_000)
+    return () => clearInterval(t)
+  }, [hayLive, hayAftermath])
+
+  if (hayLive || hayAftermath) return null
+
+  // El próximo partido con ambos equipos definidos y con kickoff aún futuro.
+  // Los partidos "por definir" (sin homeTeam/awayTeam) no aplican para
+  // countdown — no tendría portraits que mostrar.
+  const next = bracket.resolved
+    .filter(
+      (m) =>
+        m.homeTeam &&
+        m.awayTeam &&
+        !m.winner &&
+        m.live?.state !== 'in' &&
+        new Date(m.utc).getTime() > now
+    )
+    .sort((a, b) => new Date(a.utc).getTime() - new Date(b.utc).getTime())[0]
+
+  if (!next) return null
+
+  const cuenta = formatearCuenta(new Date(next.utc).getTime() - now)
+  if (!cuenta) return null // por si el clock se pasa mientras rendereamos
+
+  // El stage sale del anfitrión (mismo criterio que LiveVsCard) para que el
+  // panel next herede el escenario donde se jugará la próxima pelea.
+  const stageFighter = FIGHTERS[OWNER_BY_TEAM[next.homeTeam].id]
+
+  return (
+    <div
+      className="sf-next-fight"
+      style={{ '--sf-live-stage': `url(${stageFighter.stage})` }}
+    >
+      <div className="sf-next-topbar">
+        <span className="sf-next-title">NEXT FIGHT</span>
+        <span className="sf-next-stage-label">{stageFighter.city}</span>
+      </div>
+      <div className="sf-next-arena">
+        <NextFighter teamId={next.homeTeam} side="home" />
+        <div className="sf-next-center">
+          <div className="sf-next-vs">VS</div>
+          <div className="sf-next-countdown" aria-label={`Faltan ${cuenta.hms}`}>
+            {cuenta.prefix && <span className="sf-next-days">{cuenta.prefix}</span>}
+            <span className="sf-next-hms">{cuenta.hms}</span>
+          </div>
+        </div>
+        <NextFighter teamId={next.awayTeam} side="away" />
+      </div>
+      <div className="sf-next-getready">GET READY!</div>
     </div>
   )
 }
@@ -279,6 +394,7 @@ export function StreetFighter({ bracket }) {
       <div className="sf-submarquee">TÓMBOLA DEL AJOLOTL EDITION</div>
 
       <LiveVsPanel bracket={bracket} />
+      <NextFightPanel bracket={bracket} />
 
       <div className="sf-select-title">SELECT YOUR FIGHTER</div>
       <div className="sf-roster">
