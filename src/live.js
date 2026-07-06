@@ -119,6 +119,19 @@ export async function fetchLive() {
         ownGoal: Boolean(d.ownGoal),
         penalty: Boolean(d.penaltyKick),
       }))
+    // Tarjetas amarillas y rojas (mismo array `details`, otros flags). La roja
+    // por doble amarilla la marca ESPN con redCard=true + type.text "Yellow-Red
+    // Card"; la detectamos para mostrarla como amarilla+roja apiladas.
+    const cards = (comp.details ?? [])
+      .filter((d) => d.yellowCard || d.redCard)
+      .sort((a, b) => (a.clock?.value ?? 0) - (b.clock?.value ?? 0))
+      .map((d) => ({
+        minute: d.clock?.displayValue ?? '',
+        player: d.athletesInvolved?.[0]?.displayName ?? '',
+        teamId: espnIdToApp[d.team?.id] ?? null,
+        color: d.redCard ? 'red' : 'yellow',
+        secondYellow: Boolean(d.redCard) && /yellow.?red/i.test(d.type?.text ?? ''),
+      }))
     // Estadio: ESPN lo entrega en competitions[0].venue. Se conserva el
     // nombre (fullName) y la ciudad como fallback. Cuando no viene (a veces
     // en partidos muy futuros o data parcial) queda null y la UI lo omite.
@@ -141,6 +154,7 @@ export async function fetchLive() {
       winnerId,
       finish,
       goals,
+      cards,
       venue,
       altered,
     }
