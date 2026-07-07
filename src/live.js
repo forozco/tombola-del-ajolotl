@@ -96,13 +96,27 @@ export async function fetchLive() {
     const homeId = ABBR_TO_ID[home?.team?.abbreviation]
     const awayId = ABBR_TO_ID[away?.team?.abbreviation]
     if (!homeId || !awayId) continue
-    const state = comp.status?.type?.state // pre | in | post
+    const rawState = comp.status?.type?.state // pre | in | post
     const shortDetail = comp.status?.type?.shortDetail
     const altered = alteredStatus(comp.status?.type?.name, comp.status?.type?.description)
     const enPenales = home.shootoutScore != null || away.shootoutScore != null
+    // Detección defensiva de partido terminado. ESPN a veces tarda en flipar
+    // `state` a 'post' aunque ya haya marcado el ganador con `competitor.winner=true`
+    // (ejemplo real: Suiza-Colombia 7-jul, tanda de penales resuelta pero
+    // state seguía en 'in' → la card se quedó pegada mostrando "En vivo ·
+    // PENALES · 4-3"). Cualquiera de estas señales sirve como "el juego acabó":
+    //   - state === 'post'
+    //   - type.completed === true
+    //   - alguno de los competidores tiene winner === true
+    // Fuente de la verdad: si algún competidor es ganador oficial, el partido
+    // se acabó; da igual lo que diga el state numérico.
+    const espnCompleted = comp.status?.type?.completed === true
+    const anyWinnerFlag = Boolean(home.winner || away.winner)
+    const isCompleted = rawState === 'post' || espnCompleted || anyWinnerFlag
+    const state = isCompleted ? 'post' : rawState
     let winnerId = null
     let finish = null // ft (90 min) | aet (tiempo extra) | pens (penales)
-    if (state === 'post') {
+    if (isCompleted) {
       if (home.winner) winnerId = homeId
       else if (away.winner) winnerId = awayId
       finish = enPenales ? 'pens' : /AET/i.test(shortDetail ?? '') ? 'aet' : 'ft'
