@@ -38,8 +38,60 @@ function AmigoRow({ owner, esCampeon }) {
   )
 }
 
-function StackChip({ children }) {
-  return <span className="creditos-chip">{children}</span>
+// Stack agrupado por rol en el sistema. Cada item explica en una frase qué
+// hace, para que la sección no sea solo una lista de nombres.
+const STACK_GROUPS = [
+  {
+    label: 'Frontend',
+    items: [
+      { name: 'React 18', role: 'UI reactiva y estado de la partida' },
+      { name: 'Vite 5', role: 'Build y hot reload en desarrollo' },
+      {
+        name: 'PWA (vite-plugin-pwa)',
+        role: 'App instalable en el homescreen, funciona sin señal',
+      },
+    ],
+  },
+  {
+    label: 'Datos y estado compartido',
+    items: [
+      {
+        name: 'Supabase Postgres',
+        role: 'Persistencia de resultados y snapshots detallados por partido',
+      },
+      {
+        name: 'Supabase Realtime',
+        role: 'Cambios registrados en un teléfono aparecen en el resto al instante',
+      },
+      {
+        name: 'ESPN site.api',
+        role: 'Marcadores en vivo, goles, tarjetas, tandas de penales, estadios',
+      },
+    ],
+  },
+  {
+    label: 'Distribución',
+    items: [
+      { name: 'Vercel', role: 'Hosting con deploys automáticos por rama' },
+      { name: 'Service Worker', role: 'Cache de sprites y bracket para modo offline' },
+    ],
+  },
+]
+
+function StackGroup({ group }) {
+  return (
+    <div className="creditos-stack-group">
+      <div className="creditos-stack-cat">{group.label}</div>
+      <ul className="creditos-stack-list">
+        {group.items.map((item) => (
+          <li key={item.name} className="creditos-stack-item">
+            <span className="creditos-stack-name">{item.name}</span>
+            <span className="creditos-stack-role">{item.role}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
 }
 
 function Section({ title, children }) {
@@ -99,18 +151,15 @@ export function Creditos({ bracket, onClose }) {
         {/* ── Cómo se armó ── */}
         <Section title="Cómo se armó">
           <p className="creditos-p">
-            App web progresiva hecha con React + Vite. Todo el estado del
-            torneo vive en Supabase (Postgres + realtime) y los marcadores
-            en vivo bajan directo del API pública de ESPN.
+            App web progresiva hecha con React sobre Vite. Todo el estado del
+            torneo vive en Supabase (Postgres + Realtime) y los marcadores en
+            vivo bajan directo del API pública de ESPN. Nada de esto necesitó
+            servidor propio.
           </p>
           <div className="creditos-stack">
-            <StackChip>React 18</StackChip>
-            <StackChip>Vite 5</StackChip>
-            <StackChip>PWA + Service Worker</StackChip>
-            <StackChip>Supabase Realtime</StackChip>
-            <StackChip>PostgreSQL</StackChip>
-            <StackChip>ESPN API</StackChip>
-            <StackChip>Vercel</StackChip>
+            {STACK_GROUPS.map((g) => (
+              <StackGroup key={g.label} group={g} />
+            ))}
           </div>
         </Section>
 

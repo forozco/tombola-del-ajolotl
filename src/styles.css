@@ -3959,23 +3959,70 @@ body {
   flex-shrink: 0;
 }
 
-/* ── Chips del stack tecnológico ─────────────────────────────────────── */
+/* ── Stack tecnológico agrupado ──────────────────────────────────────
+   Reemplaza los chips sueltos por una lista categorizada. Cada item
+   muestra el nombre en negrita + el rol en muted, apilados en móvil y
+   lado-a-lado en pantallas más anchas. Se ve más como una ficha técnica
+   que como una nube de tags. */
 
 .creditos-stack {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 4px;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.creditos-chip {
-  padding: 6px 11px;
-  background: color-mix(in srgb, var(--accent) 8%, var(--card));
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+.creditos-stack-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.creditos-stack-cat {
+  padding: 10px 14px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+
+.creditos-stack-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.creditos-stack-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.creditos-stack-item:last-child {
+  border-bottom: none;
+}
+
+.creditos-stack-name {
+  font-size: 0.9rem;
+  font-weight: 700;
   color: var(--text);
+  font-family: 'ui-monospace', 'SF Mono', 'Menlo', 'Consolas', monospace;
+  letter-spacing: -0.01em;
+}
+
+.creditos-stack-role {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted);
 }
 
 /* ── Lista de datos ──────────────────────────────────────────────────── */
