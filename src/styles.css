@@ -3931,15 +3931,11 @@ body {
   flex-shrink: 0;
 }
 
-/* Dedicatoria: nota personal debajo del roster. Look de "carta cerrando la
-   página" — indentación sutil con quote-line izquierdo, texto un chispito
-   más grande que el copy normal, y firma alineada a la derecha. */
+/* Dedicatoria: nota personal debajo del roster. Sin adornos — texto suelto
+   con un chispito más de aire y la firma a la derecha. */
 .creditos-dedicatoria {
   margin-top: 20px;
-  padding: 18px 20px;
-  border-left: 3px solid var(--accent);
-  background: color-mix(in srgb, var(--accent) 4%, transparent);
-  border-radius: 0 12px 12px 0;
+  padding: 4px;
   display: flex;
   flex-direction: column;
   gap: 10px;
