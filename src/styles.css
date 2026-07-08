@@ -3993,6 +3993,14 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.creditos-stack-intro {
+  padding: 12px 14px 4px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--muted);
+  font-style: italic;
+}
+
 .creditos-stack-list {
   list-style: none;
   padding: 0;

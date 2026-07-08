@@ -38,42 +38,61 @@ function AmigoRow({ owner, esCampeon }) {
   )
 }
 
-// Stack agrupado por rol en el sistema. Cada item explica en una frase qué
-// hace, para que la sección no sea solo una lista de nombres.
+// Stack agrupado por rol en el sistema. Cada grupo lleva una intro que
+// explica qué pasa en esa capa, y cada tech describe con detalle qué hace
+// para que la sección se lea como una ficha técnica real, no una lista.
 const STACK_GROUPS = [
   {
     label: 'Frontend',
+    intro:
+      'Toda la UI que se ve en el teléfono. Pura app cliente — nada corre en servidor propio.',
     items: [
-      { name: 'React 18', role: 'UI reactiva y estado de la partida' },
-      { name: 'Vite 5', role: 'Build y hot reload en desarrollo' },
       {
-        name: 'PWA (vite-plugin-pwa)',
-        role: 'App instalable en el homescreen, funciona sin señal',
+        name: 'React 18',
+        role: 'Toda la UI se re-renderiza sola cuando cambia el estado (un gol en ESPN, un pick de admin, un cruce del bracket que se decide). Sin librerías de estado externas — solo hooks y prop drilling controlado.',
+      },
+      {
+        name: 'Vite 5',
+        role: 'Bundler y dev server. HMR instantáneo mientras se codea; build de producción sale en ~130 KB gzip incluyendo los sprites del bracket.',
+      },
+      {
+        name: 'vite-plugin-pwa',
+        role: 'Genera el Service Worker con precache de todos los assets del build. La app es instalable en el homescreen desde Safari o Chrome, y funciona sin señal (los sprites y el último bracket viven en cache).',
       },
     ],
   },
   {
     label: 'Datos y estado compartido',
+    intro:
+      'Cómo la app sabe qué pasó y cómo los 8 amigos ven exactamente lo mismo al instante.',
     items: [
       {
         name: 'Supabase Postgres',
-        role: 'Persistencia de resultados y snapshots detallados por partido',
+        role: 'Dos tablas con RLS: una guarda match_id → ganador, la otra un snapshot completo por partido (goles con minuto, tarjetas, cómo terminó — regular, tiempo extra o penales). Ese snapshot es el respaldo cuando ESPN deja de servir el evento.',
       },
       {
         name: 'Supabase Realtime',
-        role: 'Cambios registrados en un teléfono aparecen en el resto al instante',
+        role: 'Suscripción vía WebSocket a las tablas anteriores. Cuando un teléfono registra un ganador (auto desde ESPN o manual con ?admin), el resto de los amigos lo ve en el mismo segundo, sin refrescar la app.',
       },
       {
         name: 'ESPN site.api',
-        role: 'Marcadores en vivo, goles, tarjetas, tandas de penales, estadios',
+        role: 'Endpoint público sin API key. Poll adaptativo: cada 10 s durante un partido en curso, 15 s en la ventana crítica de kickoff (5 min antes hasta 10 min después), cada 3 min en un día sin partidos. De ahí bajan marcadores, goles con goleador, tarjetas, penales y estadios.',
       },
     ],
   },
   {
     label: 'Distribución',
+    intro:
+      'Cómo llega el código al teléfono y qué queda disponible sin internet.',
     items: [
-      { name: 'Vercel', role: 'Hosting con deploys automáticos por rama' },
-      { name: 'Service Worker', role: 'Cache de sprites y bracket para modo offline' },
+      {
+        name: 'Vercel',
+        role: 'Hosting con CDN global. Cada PR genera automáticamente una URL de preview para probar antes de mergear; producción sale de main. Deploys en menos de un minuto.',
+      },
+      {
+        name: 'Service Worker',
+        role: 'Registrado por vite-plugin-pwa. Precachea JS, CSS, sprites del arcade, banderas y stages. Al abrir la app instalada sin internet, todo carga desde caché y solo faltan los marcadores en vivo.',
+      },
     ],
   },
 ]
@@ -82,6 +101,7 @@ function StackGroup({ group }) {
   return (
     <div className="creditos-stack-group">
       <div className="creditos-stack-cat">{group.label}</div>
+      {group.intro ? <p className="creditos-stack-intro">{group.intro}</p> : null}
       <ul className="creditos-stack-list">
         {group.items.map((item) => (
           <li key={item.name} className="creditos-stack-item">
