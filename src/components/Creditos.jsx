@@ -5,14 +5,12 @@
 // tipografía limpia. Sin arcade, sin cómic — es la página "seria" de cierre.
 
 import { OWNERS, TEAMS, POZO } from '../data.js'
-import { FIGHTERS } from '../sf.js'
 import { Bandera } from './Bandera.jsx'
 import { OwnerChip } from './OwnerChip.jsx'
 
 const REPO_URL = 'https://github.com/forozco/tombola-del-ajolotl'
 
 function AmigoRow({ owner, esCampeon }) {
-  const f = FIGHTERS[owner.id]
   return (
     <div className={`creditos-amigo${esCampeon ? ' campeon' : ''}`}>
       <span className="creditos-amigo-avatar" style={{ background: owner.color }}>
@@ -23,7 +21,6 @@ function AmigoRow({ owner, esCampeon }) {
           <span className="creditos-amigo-nombre" style={{ color: owner.color }}>
             {owner.name}
           </span>
-          <span className="creditos-amigo-fighter">{f.fighter}</span>
         </div>
         <div className="creditos-amigo-teams">
           {owner.teams.map((teamId) => (
