@@ -11,6 +11,7 @@ const params = new URLSearchParams(window.location.search)
 export const ES_ADMIN = params.has('admin')
 export const ES_SIM = params.has('simular')
 export const ES_BONUS = params.has('bonus')
+export const ES_CREDITOS = params.has('creditos')
 
 // El "ahora" de la app: reloj real, o reloj virtual del demo (los días del
 // calendario avanzan conforme corre la simulación).
