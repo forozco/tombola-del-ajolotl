@@ -5,7 +5,7 @@
 // `hooks/`, y la presentación en `components/`. Este archivo no debería crecer
 // mucho más allá de esto.
 
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { computeBracket } from './lib/bracket.js'
 import { marcadorTexto, detalleDe } from './lib/matches.js'
@@ -24,6 +24,8 @@ import { Hoy } from './components/Hoy.jsx'
 import { Llaves } from './components/Llaves.jsx'
 import { Amigos } from './components/Amigos.jsx'
 import { Footer } from './components/Footer.jsx'
+import { Creditos } from './components/Creditos.jsx'
+import { ES_CREDITOS } from './lib/modes.js'
 
 export default function App() {
   const { results, detalles, applyLive, pick, refetch } = useResults()
@@ -73,6 +75,35 @@ export default function App() {
     [results, live, detalles]
   )
   const enVivoCount = bracket.resolved.filter((m) => m.live?.state === 'in').length
+
+  // Página de créditos: se muestra automáticamente cuando ya pasó la ventana
+  // "3h después de que terminó la final" (~5h post-kickoff, que cubre el
+  // partido completo con ET+pens + 3h de grace). Antes de ese momento solo
+  // se abre vía ?creditos (para preview) o desde el link del footer.
+  //
+  // Persistencia: la dismissión es solo de sesión. Al recargar, si ya pasó
+  // el threshold, vuelve a abrirse — el usuario dijo "que quede permanente
+  // después del final", así el archivo del torneo queda detrás pero la
+  // página principal ES la de créditos.
+  //
+  // Threshold: kickoff de la final (2026-07-19T19:00Z) + 5h. Cubre 90 min
+  // + medio tiempo + tiempo extra + penales + margen de celebración.
+  const CREDITOS_AT_MS = new Date('2026-07-20T00:00:00Z').getTime()
+  const yaEsPostFinal = () => Date.now() >= CREDITOS_AT_MS
+  const [creditosAbierto, setCreditosAbierto] = useState(
+    () => ES_CREDITOS || yaEsPostFinal()
+  )
+
+  // Si el usuario está mirando la app cuando cruza el threshold, la página
+  // aparece sola sin necesidad de recargar. Chequeo cada 60s (cheap).
+  useEffect(() => {
+    if (creditosAbierto) return undefined
+    const id = setInterval(() => {
+      if (yaEsPostFinal()) setCreditosAbierto(true)
+    }, 60_000)
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creditosAbierto])
 
   // Al detectar que un partido terminó (ESPN dice 'post' con ganador), se
   // registra automáticamente ganador + marcador + snapshot con goles. Se
@@ -139,6 +170,8 @@ export default function App() {
       </div>
 
       <Footer />
+
+      {creditosAbierto ? <Creditos bracket={bracket} /> : null}
     </div>
   )
 }
