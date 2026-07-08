@@ -1575,27 +1575,6 @@ button,
   color: var(--text);
 }
 
-/* Botón para abrir la página de créditos. Look bajo perfil: mismo tono que
-   el resto del footer, con el accent apenas como hint. */
-.footer-creditos-link {
-  display: inline-block;
-  margin-top: 12px;
-  padding: 8px 14px;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--accent);
-  font-family: inherit;
-  font-size: 0.78rem;
-  font-weight: 600;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-spring);
-}
-
-.footer-creditos-link:active {
-  transform: scale(0.96);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-}
 
 .footer-version {
   display: block;
@@ -4134,5 +4113,94 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .creditos-overlay {
     animation: none;
+  }
+}
+
+/* ── Responsive: iPad y desktop ──
+   La página se armó mobile-first (max-width 560). En pantallas más grandes
+   ensanchamos el container, agrandamos la tipografía del hero, y ponemos
+   los amigos, el stack y la sección de datos en grid para aprovechar el
+   ancho — verticalmente apilado se vería ridículamente disperso. */
+
+@media (min-width: 768px) {
+  .creditos-scroll {
+    max-width: 880px;
+    padding: 40px 40px;
+    gap: 40px;
+  }
+
+  .creditos-titulo {
+    font-size: 2.4rem;
+  }
+
+  .creditos-lede {
+    font-size: 1.02rem;
+    max-width: 620px;
+  }
+
+  .creditos-hero-nombre {
+    font-size: 1.55rem;
+  }
+
+  .creditos-h2 {
+    font-size: 0.8rem;
+  }
+
+  .creditos-p {
+    font-size: 0.95rem;
+    max-width: 640px;
+  }
+
+  .creditos-amigos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .creditos-stack {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  .creditos-datos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .creditos-scroll {
+    max-width: 1080px;
+    padding: 56px 56px;
+    gap: 48px;
+  }
+
+  .creditos-titulo {
+    font-size: 2.8rem;
+    line-height: 1.1;
+  }
+
+  .creditos-lede {
+    font-size: 1.05rem;
+  }
+
+  .creditos-hero-campeon {
+    padding: 20px 24px;
+  }
+
+  .creditos-hero-nombre {
+    font-size: 1.75rem;
+  }
+
+  /* En desktop los 3 grupos del stack caben en fila; se ve como una
+     verdadera ficha técnica en 3 columnas. */
+  .creditos-stack {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .creditos-datos {
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }

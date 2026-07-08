@@ -169,7 +169,7 @@ export default function App() {
         {tab === 'amigos' && <Amigos bracket={bracket} />}
       </div>
 
-      <Footer onOpenCreditos={() => setCreditosAbierto(true)} />
+      <Footer />
 
       {creditosAbierto ? (
         <Creditos

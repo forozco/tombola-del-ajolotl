@@ -1,12 +1,10 @@
 // Pie de página: crédito, versión + SHA (inyectados por vite.config), y
 // una nota sobre zona horaria local del dispositivo. La versión + SHA
 // permiten identificar exactamente qué build está corriendo cada teléfono.
-// El botón "Créditos" abre la página de agradecimiento (siempre disponible,
-// aparte del trigger automático post-final que corre en App.jsx).
 
 import { zonaHoraria } from '../lib/dates.js'
 
-export function Footer({ onOpenCreditos }) {
+export function Footer() {
   return (
     <footer className="footer">
       <p>
@@ -16,11 +14,6 @@ export function Footer({ onOpenCreditos }) {
       </p>
       <span className="footer-tz">Horarios en tu hora local ({zonaHoraria()})</span>
       <span className="footer-credito">Hecho con ❤️ por el fer</span>
-      {onOpenCreditos ? (
-        <button className="footer-creditos-link" onClick={onOpenCreditos}>
-          Créditos y stack tecnológico ↗
-        </button>
-      ) : null}
       <span className="footer-version">
         v{__APP_VERSION__} · {__APP_SHA__}
       </span>
