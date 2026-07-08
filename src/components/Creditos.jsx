@@ -123,7 +123,7 @@ function Section({ title, children }) {
   )
 }
 
-export function Creditos({ bracket, onClose }) {
+export function Creditos({ bracket }) {
   const campeon = bracket?.champion
   const ownerCampeon = campeon ? OWNERS.find((o) => o.teams.includes(campeon)) : null
   const teamName = campeon ? TEAMS[campeon]?.name : null
@@ -227,11 +227,6 @@ export function Creditos({ bracket, onClose }) {
             hecho con <span className="creditos-heart">❤</span> por el fer
           </div>
           <div className="creditos-año">Mundial 2026 · Junio–Julio</div>
-          {onClose ? (
-            <button className="creditos-close" onClick={onClose}>
-              Cerrar
-            </button>
-          ) : null}
         </footer>
       </div>
     </div>

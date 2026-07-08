@@ -4092,23 +4092,6 @@ body {
   text-transform: uppercase;
 }
 
-.creditos-close {
-  margin-top: 12px;
-  padding: 10px 22px;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.creditos-close:active {
-  transform: scale(0.97);
-  background: var(--card);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .creditos-overlay {
