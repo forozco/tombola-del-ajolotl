@@ -158,13 +158,28 @@ export function Creditos({ bracket }) {
         {/* ── Los amigos ── */}
         <Section title="El grupo">
           <p className="creditos-p">
-            Cada uno puso $200 y le tocaron 2 equipos en la tómbola. No hubo
-            estrategia — pura suerte y aguante.
+            Cada uno se rifó $200 y aceptó su destino: dos equipos al azar,
+            cero derecho a reclamar. No hubo estrategia. No hubo negociación.
+            Puro aguante durante un mes de partidos, mensajes en el grupo, y
+            esa mezcla rara de mala suerte y suerte pura que trae cada
+            Mundial.
           </p>
           <div className="creditos-amigos">
             {OWNERS.map((o) => (
               <AmigoRow key={o.id} owner={o} esCampeon={ownerCampeon?.id === o.id} />
             ))}
+          </div>
+          <div className="creditos-dedicatoria">
+            <p>
+              Gracias por meterle a la quiniela con toda la seriedad y con
+              nada de seriedad al mismo tiempo. Por cada gol celebrado en el
+              chat, cada &ldquo;no puede ser que me haya tocado&rdquo;, cada
+              apuesta paralela y cada partido visto juntos. Ustedes son los
+              coons — la app es solo un bracket bonito.
+            </p>
+            <p className="creditos-dedicatoria-firma">
+              Nos vemos en el 2030.
+            </p>
           </div>
         </Section>
 

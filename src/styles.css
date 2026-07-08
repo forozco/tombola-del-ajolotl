@@ -3938,6 +3938,33 @@ body {
   flex-shrink: 0;
 }
 
+/* Dedicatoria: nota personal debajo del roster. Look de "carta cerrando la
+   página" — indentación sutil con quote-line izquierdo, texto un chispito
+   más grande que el copy normal, y firma alineada a la derecha. */
+.creditos-dedicatoria {
+  margin-top: 20px;
+  padding: 18px 20px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  border-radius: 0 12px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.creditos-dedicatoria p {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.creditos-dedicatoria-firma {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-style: italic;
+  text-align: right;
+}
+
 /* ── Stack tecnológico agrupado ──────────────────────────────────────
    Reemplaza los chips sueltos por una lista categorizada. Cada item
    muestra el nombre en negrita + el rol en muted, apilados en móvil y
