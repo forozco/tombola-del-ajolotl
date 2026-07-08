@@ -172,7 +172,14 @@ export default function App() {
       <Footer onOpenCreditos={() => setCreditosAbierto(true)} />
 
       {creditosAbierto ? (
-        <Creditos bracket={bracket} onClose={() => setCreditosAbierto(false)} />
+        <Creditos
+          bracket={bracket}
+          // Post-final la página es permanente: no hay onClose, no hay
+          // botón Cerrar. La app ya es la de créditos y punto. Antes del
+          // threshold (preview vía ?creditos o click en el footer) sí es
+          // dismissible con Cerrar.
+          onClose={yaEsPostFinal() ? undefined : () => setCreditosAbierto(false)}
+        />
       ) : null}
     </div>
   )
