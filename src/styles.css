@@ -1575,6 +1575,28 @@ button,
   color: var(--text);
 }
 
+/* Botón para abrir la página de créditos. Look bajo perfil: mismo tono que
+   el resto del footer, con el accent apenas como hint. */
+.footer-creditos-link {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+
+.footer-creditos-link:active {
+  transform: scale(0.96);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
 .footer-version {
   display: block;
   margin-top: 6px;
