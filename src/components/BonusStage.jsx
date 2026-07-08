@@ -1,127 +1,54 @@
-// ── Easter egg · Bonus Stage del auto ──
-// Homenaje jugable al clásico bonus stage de Street Fighter II ("Destroy the
-// Car!") con los sprites originales del arcade (rip de The Spriters Resource,
-// © Capcom) servidos desde /public/sf/bonus. Se accede desde un botoncito
-// joystick en el panel NEXT FIGHT.
+// ── Easter egg · Bonus Stage del auto ──────────────────────────────────
+// Homenaje jugable al clásico bonus stage de Street Fighter II ("Destroy
+// the Car!"). Se accede desde un botoncito joystick en el panel NEXT
+// FIGHT.
+//
+// Estructura del módulo:
+//   - Este archivo:        estado del juego, controles y render principal
+//   - BonusStageAssets.js: URLs de sprites + constantes de gameplay
+//   - BonusStageAudio.js:  AudioContext + SFX + música en loop
+//   - BonusStageScene.jsx: fondo de muelles (SVG decorativo)
+//
 // Mecánica:
 //   - Ryu animado frame a frame (idle / jab / patada / hadouken)
-//   - Auto real de SSF2 con 10 estados de daño progresivo
+//   - Auto con 10 estados de daño progresivo
 //   - Tap al auto = puñetazo · botón KICK = patada (x2 daño)
-//   - Especiales que gastan medidor SUPER: SHORYUKEN (3 barras, uppercut con
-//     salto), TATSUMAKI (5, giro multi-hit) y HADOUKEN (8, fireball que cruza)
+//   - Especiales que gastan medidor SUPER: SHORYUKEN (3 barras, uppercut
+//     con salto), TATSUMAKI (5, giro multi-hit) y HADOUKEN (8, fireball
+//     que cruza)
 //   - Teclado: Z puño · X patada · S shoryuken · D tatsumaki · C hadouken
-//   - Chispas, vidrios y escombros reales del sheet vuelan en cada golpe;
-//     la llanta sale disparada cuando el auto ya está chatarra
-//   - Combos ("N HITS!"), score flotante, shake, haptics y SFX reales del
-//     arcade ("FIGHT!", golpes, "Hadouken!", "PERFECT" / "You lose")
+//   - Chispas, vidrios y escombros vuelan en cada golpe; la llanta sale
+//     disparada cuando el auto ya está chatarra
+//   - Combos ("N HITS!"), score flotante, shake, haptics y SFX del arcade
 //   - Timer 30s LED · high score en localStorage · PLAY AGAIN al terminar
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { haptic } from '../haptics.js'
+import {
+  SPRITES,
+  DAMAGE_TO_DESTROY,
+  TIME_LIMIT,
+  METER_MAX,
+  SHORYU_COST,
+  TATSU_COST,
+  HADO_COST,
+  COMBO_WINDOW,
+  loadBestScore,
+  saveBestScore,
+} from './BonusStageAssets.js'
+import {
+  ensureSfx,
+  sfx,
+  playMusic,
+  stopSource,
+  resumeAudio,
+} from './BonusStageAudio.js'
+import { BonusScene } from './BonusStageScene.jsx'
 
-const DAMAGE_TO_DESTROY = 28 // puntos de daño para destruir el auto
-const TIME_LIMIT = 30 // segundos
-const METER_MAX = 8 // golpes para llenar el medidor SUPER
-// Costo en barras de cada especial (el hadouken pide el medidor lleno)
-const SHORYU_COST = 3
-const TATSU_COST = 5
-const HADO_COST = METER_MAX
-const COMBO_WINDOW = 900 // ms entre golpes para encadenar combo
-const BEST_KEY = 'ajolotl-sf-bonus-best'
-
-const B = '/sf/bonus'
-const seq = (name, n) => Array.from({ length: n }, (_, i) => `${B}/${name}-${i}.png`)
-const SPRITES = {
-  idle: seq('ryu-idle', 5),
-  jab: seq('ryu-jab', 2),
-  kick: seq('ryu-kick', 2),
-  shoryu: seq('ryu-shoryu', 4),
-  tatsu: seq('ryu-tatsu', 4),
-  hado: seq('ryu-hado', 5),
-  car: seq('car', 10),
-  fireball: seq('fireball', 3),
-  spark: seq('spark', 3),
-  glass: seq('glass', 3),
-  debris: ['debris-a', 'debris-b', 'debris-c', 'shard-a', 'shard-b', 'shard-c'].map(
-    (n) => `${B}/${n}.png`,
-  ),
-  big: [`${B}/debris-bumper.png`, `${B}/debris-hood.png`],
-  tire: `${B}/tire.png`,
-}
-
-function loadBestScore() {
-  try {
-    const raw = localStorage.getItem(BEST_KEY)
-    const n = Number(raw)
-    return Number.isFinite(n) ? n : 0
-  } catch {
-    return 0
-  }
-}
-
-// ── SFX reales del arcade (rip de The Sounds Resource, © Capcom) ──
-// Clips del SF2 Turbo servidos desde /sf/bonus/sfx: golpes jab/strong/fierce,
-// la voz "Hadouken!" de Ryu, el crash del stage y el announcer (Fight!,
-// Perfect, You lose). Se decodifican una sola vez a AudioBuffer para poder
-// solapar reproducciones al mashear. Degrada en silencio si no hay audio.
-const SFX_URLS = {
-  'hit-jab': `${B}/sfx/hit-jab.m4a`,
-  'hit-strong': `${B}/sfx/hit-strong.m4a`,
-  'hit-fierce': `${B}/sfx/hit-fierce.m4a`,
-  'hit-roundhouse': `${B}/sfx/hit-roundhouse.m4a`,
-  hadouken: `${B}/sfx/hadouken.m4a`,
-  shoryuken: `${B}/sfx/shoryuken.m4a`,
-  tatsumaki: `${B}/sfx/tatsumaki.m4a`,
-  'on-fire': `${B}/sfx/on-fire.m4a`,
-  crash: `${B}/sfx/crash.m4a`,
-  fight: `${B}/sfx/fight.m4a`,
-  perfect: `${B}/sfx/perfect.m4a`,
-  'you-lose': `${B}/sfx/you-lose.m4a`,
-  'score-count': `${B}/sfx/score-count.m4a`,
-  // Música del nivel: el "Bonus Stage" del OST arcade CPS-1, en loop
-  music: `${B}/sfx/bonus-theme.m4a`,
-}
-
-let audioCtx = null
-const sfxBuffers = {}
-let sfxLoading = null
-
-function ensureSfx() {
-  audioCtx ||= new (window.AudioContext || window.webkitAudioContext)()
-  sfxLoading ||= Promise.all(
-    Object.entries(SFX_URLS).map(async ([key, url]) => {
-      try {
-        const res = await fetch(url)
-        sfxBuffers[key] = await audioCtx.decodeAudioData(await res.arrayBuffer())
-      } catch {
-        /* clip faltante: ese sonido simplemente no suena */
-      }
-    }),
-  )
-}
-
-function sfx(key, { vol = 1, rate = 1 } = {}) {
-  try {
-    ensureSfx()
-    if (audioCtx.state === 'suspended') audioCtx.resume()
-    const buf = sfxBuffers[key]
-    if (!buf) return
-    const src = audioCtx.createBufferSource()
-    src.buffer = buf
-    src.playbackRate.value = rate
-    const g = audioCtx.createGain()
-    g.gain.value = vol
-    src.connect(g)
-    g.connect(audioCtx.destination)
-    src.start()
-  } catch {
-    /* sin audio: el juego sigue igual */
-  }
-}
-
-// Chispa de impacto con los 3 frames reales del sheet, apilados con opacidad
-// secuenciada por CSS (sf-bonus-spark-f0/1/2). Se desmonta sola vía el padre.
+// Chispa de impacto con los 3 frames del sheet, apilados con opacidad
+// secuenciada por CSS (sf-bonus-spark-f0/1/2). Se desmonta sola vía el
+// padre; se queda inline aquí porque solo la usa BonusStage.
 function HitSpark({ x, y, big }) {
   return (
     <div
@@ -216,32 +143,12 @@ export function BonusStage({ onClose }) {
     if (!mutedRef.current) sfx(k, opts)
   }
 
-  // ── Música de fondo en loop (Web Audio, mismo contexto que los SFX) ──
   const startMusic = () => {
     if (mutedRef.current || musicRef.current) return
-    try {
-      if (!audioCtx || !sfxBuffers.music) return
-      if (audioCtx.state === 'suspended') audioCtx.resume()
-      const src = audioCtx.createBufferSource()
-      src.buffer = sfxBuffers.music
-      src.loop = true
-      const g = audioCtx.createGain()
-      g.gain.value = 0.3 // de fondo: que los golpes y voces se oigan encima
-      src.connect(g)
-      g.connect(audioCtx.destination)
-      src.start()
-      musicRef.current = src
-    } catch {
-      /* sin audio */
-    }
+    musicRef.current = playMusic({ volume: 0.3 })
   }
-
   const stopMusic = () => {
-    try {
-      musicRef.current?.stop()
-    } catch {
-      /* ya estaba parado */
-    }
+    stopSource(musicRef.current)
     musicRef.current = null
   }
 
@@ -250,8 +157,7 @@ export function BonusStage({ onClose }) {
     let vivo = true
     ;(async () => {
       try {
-        ensureSfx()
-        await sfxLoading
+        await ensureSfx()
         if (vivo && stateRef.current === 'playing') startMusic()
       } catch {
         /* sin audio */
@@ -564,11 +470,7 @@ export function BonusStage({ onClose }) {
     setScore(final)
     if (final > best) {
       setBest(final)
-      try {
-        localStorage.setItem(BEST_KEY, String(final))
-      } catch {
-        /* sesión sin storage: solo memoria */
-      }
+      saveBestScore(final)
     }
     return () => clearTimeout(collapseId)
   }, [state])
@@ -615,11 +517,7 @@ export function BonusStage({ onClose }) {
       onPointerDown={() => {
         // Primer gesto en modo prueba (?bonus): despierta el audio y arranca
         // la música si el navegador la tenía bloqueada por autoplay.
-        try {
-          if (audioCtx?.state === 'suspended') audioCtx.resume()
-        } catch {
-          /* sin audio */
-        }
+        resumeAudio()
         if (stateRef.current === 'playing') startMusic()
       }}
     >
@@ -821,111 +719,4 @@ export function BonusStage({ onClose }) {
   // del tab-content (que anima con transform/filter) el fixed se rompe y el
   // modal queda confinado a la columna, tapado por el tab bar.
   return typeof document === 'undefined' ? overlay : createPortal(overlay, document.body)
-}
-
-// Escena de fondo del bonus stage: muelles con océano y barco al horizonte,
-// como en el arcade. Se dibuja detrás del auto y Ryu como decoración pura
-// (SVG absoluto, sin interactividad).
-function BonusScene() {
-  return (
-    <svg
-      className="sf-bonus-bg"
-      viewBox="0 0 480 320"
-      preserveAspectRatio="xMidYMax slice"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id="skyGrad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#7ec7ff" />
-          <stop offset="60%" stopColor="#a8d8ff" />
-          <stop offset="100%" stopColor="#dae8f2" />
-        </linearGradient>
-        <linearGradient id="seaGrad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#1e4a80" />
-          <stop offset="100%" stopColor="#0e2a55" />
-        </linearGradient>
-      </defs>
-
-      {/* Cielo */}
-      <rect x="0" y="0" width="480" height="180" fill="url(#skyGrad)" />
-
-      {/* Nubes suaves */}
-      <ellipse cx="80" cy="50" rx="30" ry="6" fill="#fff" opacity="0.75" />
-      <ellipse cx="120" cy="70" rx="22" ry="5" fill="#fff" opacity="0.55" />
-      <ellipse cx="320" cy="40" rx="34" ry="6" fill="#fff" opacity="0.7" />
-      <ellipse cx="410" cy="65" rx="26" ry="5" fill="#fff" opacity="0.5" />
-
-      {/* Barco/crucero al fondo, lado derecho (silueta pixel-y) */}
-      <g transform="translate(360 128)">
-        {/* Casco */}
-        <path
-          d="M 0 24 L 12 12 L 90 12 L 100 24 L 96 32 L 4 32 Z"
-          fill="#e8ecee"
-          stroke="#3a4a55"
-          strokeWidth="1.5"
-        />
-        {/* Bandera USA en mástil izq */}
-        <line x1="8" y1="12" x2="8" y2="-4" stroke="#1a1a2a" strokeWidth="1.2" />
-        <rect x="8" y="-4" width="10" height="6" fill="#c8302a" />
-        <rect x="8" y="-4" width="10" height="2" fill="#fff" />
-        <rect x="8" y="-4" width="4" height="3" fill="#25376b" />
-        {/* Superestructura blanca */}
-        <rect x="20" y="2" width="60" height="10" fill="#f5f5f5" stroke="#3a4a55" strokeWidth="1" />
-        <rect x="26" y="4" width="6" height="4" fill="#5a7ea5" />
-        <rect x="36" y="4" width="6" height="4" fill="#5a7ea5" />
-        <rect x="46" y="4" width="6" height="4" fill="#5a7ea5" />
-        <rect x="56" y="4" width="6" height="4" fill="#5a7ea5" />
-        <rect x="66" y="4" width="6" height="4" fill="#5a7ea5" />
-        {/* Chimenea con banda roja */}
-        <rect x="50" y="-8" width="10" height="12" fill="#f5f5f5" stroke="#3a4a55" strokeWidth="1" />
-        <rect x="50" y="-6" width="10" height="4" fill="#c8302a" />
-        {/* Ventanillas del casco */}
-        <circle cx="16" cy="22" r="1.5" fill="#25376b" />
-        <circle cx="26" cy="22" r="1.5" fill="#25376b" />
-        <circle cx="36" cy="22" r="1.5" fill="#25376b" />
-        <circle cx="46" cy="22" r="1.5" fill="#25376b" />
-        <circle cx="56" cy="22" r="1.5" fill="#25376b" />
-        <circle cx="66" cy="22" r="1.5" fill="#25376b" />
-        <circle cx="76" cy="22" r="1.5" fill="#25376b" />
-        <circle cx="86" cy="22" r="1.5" fill="#25376b" />
-      </g>
-
-      {/* Océano */}
-      <rect x="0" y="180" width="480" height="70" fill="url(#seaGrad)" />
-      {/* Olas horizontales sutiles */}
-      <g fill="#4a7abf" opacity="0.55">
-        <path d="M 0 190 Q 20 187 40 190 T 80 190 T 120 190 T 160 190 T 200 190 T 240 190 T 280 190 T 320 190 T 360 190 T 400 190 T 440 190 T 480 190 L 480 194 L 0 194 Z" />
-        <path d="M 0 205 Q 24 202 48 205 T 96 205 T 144 205 T 192 205 T 240 205 T 288 205 T 336 205 T 384 205 T 432 205 T 480 205 L 480 208 L 0 208 Z" />
-        <path d="M 0 222 Q 20 219 40 222 T 80 222 T 120 222 T 160 222 T 200 222 T 240 222 T 280 222 T 320 222 T 360 222 T 400 222 T 440 222 T 480 222 L 480 225 L 0 225 Z" />
-      </g>
-
-      {/* Muelle de madera — tablones horizontales con vetas */}
-      <rect x="0" y="250" width="480" height="70" fill="#8a5a2a" />
-      <g stroke="#4a2a10" strokeWidth="1.2" opacity="0.9">
-        {/* Tablas horizontales */}
-        <line x1="0" y1="260" x2="480" y2="260" />
-        <line x1="0" y1="278" x2="480" y2="278" />
-        <line x1="0" y1="296" x2="480" y2="296" />
-        <line x1="0" y1="314" x2="480" y2="314" />
-      </g>
-      {/* Vetas verticales que dividen los tablones */}
-      <g stroke="#4a2a10" strokeWidth="0.8" opacity="0.6">
-        <line x1="60" y1="250" x2="60" y2="320" />
-        <line x1="130" y1="250" x2="130" y2="320" />
-        <line x1="195" y1="250" x2="195" y2="320" />
-        <line x1="265" y1="250" x2="265" y2="320" />
-        <line x1="330" y1="250" x2="330" y2="320" />
-        <line x1="400" y1="250" x2="400" y2="320" />
-      </g>
-      {/* Highlight superior del muelle (borde iluminado) */}
-      <rect x="0" y="248" width="480" height="4" fill="#c88a4a" />
-      {/* Sombras entre tablones */}
-      <g fill="#5a3818" opacity="0.5">
-        <rect x="0" y="269" width="480" height="1.5" />
-        <rect x="0" y="287" width="480" height="1.5" />
-        <rect x="0" y="305" width="480" height="1.5" />
-      </g>
-    </svg>
-  )
 }
