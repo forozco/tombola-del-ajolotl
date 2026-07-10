@@ -14,15 +14,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { haptic } from '../haptics.js'
 
-const UMBRAL = 66
-const MAX = 88
+const UMBRAL = 60
+const MAX = 84
 // Duración/curva de la animación de vuelta (soltó sin cruzar el umbral).
-// Antes: 280ms `ease`. Ahora: 200ms con la curva de iOS del app design.
-const VUELTA_MS = 200
+// Progresión: 280→200→160 ms. Con la curva de iOS 160ms se siente snappy
+// sin resbalar — el usuario ve la vuelta pero no la espera.
+const VUELTA_MS = 160
 const CURVA = 'cubic-bezier(0.22, 1, 0.36, 1)'
 // Mínimo que el spinner queda visible aunque la re-consulta sea instantánea.
-// Antes 700ms se sentía pesado; 450ms alcanza para percibir feedback.
-const SPINNER_MIN_MS = 450
+// Progresión: 700→450→300 ms. 300ms es el umbral inferior antes de que se
+// sienta como "no hizo nada"; con red normal el refresh la supera y este
+// piso ni siquiera aplica.
+const SPINNER_MIN_MS = 300
 
 export function PullToRefresh({ onRefresh }) {
   const [refreshing, setRefreshing] = useState(false)
@@ -81,9 +84,15 @@ export function PullToRefresh({ onRefresh }) {
         startY.current = null
         return
       }
-      const d = Math.min(dy * 0.5, MAX) // resistencia elástica
+      // Resistencia elástica no lineal (power curve, expo 0.85). Antes era
+      // `dy * 0.5` lineal — los primeros píxeles del pull no daban
+      // respuesta visible y "se sentía lento arrancar". Con esta curva el
+      // indicador "agarra" al primer píxel (dy=5 ya pinta d≈4, antes d=2.5)
+      // pero el umbral sigue cayendo en ~120px de dedo, así no se dispara
+      // por accidente en un scroll normal.
+      const d = Math.min(Math.pow(dy, 0.85) * 0.98, MAX)
       pintarDist(d)
-      if (d > 4 && e.cancelable) e.preventDefault() // frena el scroll mientras se jala
+      if (d > 6 && e.cancelable) e.preventDefault() // frena el scroll mientras se jala
     }
 
     const onEnd = () => {

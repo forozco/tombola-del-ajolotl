@@ -132,15 +132,19 @@ export default function App() {
   // del service worker. El bump de refreshTick va al FINAL, después del
   // refetch — así la animación del bracket no compite con el rubber-band
   // de iOS mientras el gesto todavía está terminando.
+  //
+  // El chequeo del SW es fire-and-forget: `reg.update()` hace un fetch al
+  // servidor por el SW y puede tardar 100-500ms según red — awaitearlo
+  // extendía la duración percibida del pull-to-refresh sin dar feedback
+  // al usuario. La detección de nueva versión sigue funcionando (dispara
+  // el banner de "Actualización disponible") solo que sin bloquear.
   const onRefresh = useCallback(async () => {
     await Promise.all([refetch(), refetchLive()])
-    try {
-      const reg = await navigator.serviceWorker?.getRegistration()
-      await reg?.update()
-    } catch {
-      // sin service worker o sin permiso: no pasa nada
-    }
     setRefreshTick((t) => t + 1)
+    navigator.serviceWorker
+      ?.getRegistration()
+      .then((reg) => reg?.update())
+      .catch(() => {})
   }, [refetch, refetchLive])
 
   // Handler del ticker: cambia a la pestaña Hoy y hace scroll a la card del
