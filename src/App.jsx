@@ -129,9 +129,10 @@ export default function App() {
 
   // Refresh del pull-to-refresh: re-consulta ambas fuentes sin recargar la
   // página (nada de parpadeo) y de paso verifica si hay una versión nueva
-  // del service worker.
+  // del service worker. El bump de refreshTick va al FINAL, después del
+  // refetch — así la animación del bracket no compite con el rubber-band
+  // de iOS mientras el gesto todavía está terminando.
   const onRefresh = useCallback(async () => {
-    setRefreshTick((t) => t + 1)
     await Promise.all([refetch(), refetchLive()])
     try {
       const reg = await navigator.serviceWorker?.getRegistration()
@@ -139,6 +140,7 @@ export default function App() {
     } catch {
       // sin service worker o sin permiso: no pasa nada
     }
+    setRefreshTick((t) => t + 1)
   }, [refetch, refetchLive])
 
   // Handler del ticker: cambia a la pestaña Hoy y hace scroll a la card del

@@ -13,6 +13,7 @@
 import { useEffect, useRef } from 'react'
 import { TEAMS, OWNER_BY_TEAM, ROUNDS } from '../data.js'
 import { fechaCorta } from '../lib/dates.js'
+import { scrollHorizontalSuave } from '../lib/scroll.js'
 import { haptic } from '../haptics.js'
 import { Bandera } from './Bandera.jsx'
 import { MatchCard } from './MatchCard.jsx'
@@ -185,27 +186,30 @@ function Cuadro({ bracket, refreshTick }) {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
     const esRefresh = refreshTick > 0
-    // Smooth solo en pull-to-refresh. En primer mount, instant.
-    const behavior = esRefresh ? 'smooth' : 'auto'
+    let cancelAnim = () => {}
     const anclarEnActiva = () => {
       const cols = scroller.querySelectorAll('.cuadro-col')
       const target = cols[bracket.roundActivo]
       if (!target) return
       const left = Math.max(0, target.offsetLeft - 12)
-      // Ya cerca del objetivo: no re-scroll. Evita una animación
-      // redundante que en iOS se veía como un jerk.
+      // Ya cerca del objetivo: skip la animación (evita jerks visibles).
       if (Math.abs(scroller.scrollLeft - left) < 4) return
-      scroller.scrollTo({ left, behavior })
+      if (esRefresh) {
+        // Custom rAF animation, más rápida y consistente que el smooth
+        // nativo de iOS (que ronda 600ms + jank).
+        cancelAnim = scrollHorizontalSuave(scroller, left, 320)
+      } else {
+        scroller.scrollLeft = left
+      }
     }
     const raf = requestAnimationFrame(anclarEnActiva)
-    // El setTimeout de 120ms es para pelear el restore de scroll que hace
-    // el navegador al recargar la página — solo aplica en primer mount.
-    // En pull-to-refresh no hay tal restore, y un segundo scrollTo
-    // interrumpe la animación smooth del primero (se veía janky en iOS).
+    // setTimeout solo en primer mount, para pelear el scroll-restore del
+    // navegador al recargar. En pull-to-refresh no aplica.
     const t = esRefresh ? null : setTimeout(anclarEnActiva, 120)
     return () => {
       cancelAnimationFrame(raf)
       if (t) clearTimeout(t)
+      cancelAnim()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bracket.roundActivo, refreshTick])
