@@ -184,26 +184,29 @@ function Cuadro({ bracket, refreshTick }) {
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
-    // En primer mount no hay animación (la app apenas cargó, un scroll
-    // suave se ve como un glitch). En pull-to-refresh sí animamos para
-    // que el gesto tenga feedback visual del re-anclaje.
-    const behavior = refreshTick > 0 ? 'smooth' : 'auto'
+    const esRefresh = refreshTick > 0
+    // Smooth solo en pull-to-refresh. En primer mount, instant.
+    const behavior = esRefresh ? 'smooth' : 'auto'
     const anclarEnActiva = () => {
       const cols = scroller.querySelectorAll('.cuadro-col')
       const target = cols[bracket.roundActivo]
-      if (target) {
-        scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 12), behavior })
-      }
+      if (!target) return
+      const left = Math.max(0, target.offsetLeft - 12)
+      // Ya cerca del objetivo: no re-scroll. Evita una animación
+      // redundante que en iOS se veía como un jerk.
+      if (Math.abs(scroller.scrollLeft - left) < 4) return
+      scroller.scrollTo({ left, behavior })
     }
     const raf = requestAnimationFrame(anclarEnActiva)
-    const t = setTimeout(anclarEnActiva, 120)
+    // El setTimeout de 120ms es para pelear el restore de scroll que hace
+    // el navegador al recargar la página — solo aplica en primer mount.
+    // En pull-to-refresh no hay tal restore, y un segundo scrollTo
+    // interrumpe la animación smooth del primero (se veía janky en iOS).
+    const t = esRefresh ? null : setTimeout(anclarEnActiva, 120)
     return () => {
       cancelAnimationFrame(raf)
-      clearTimeout(t)
+      if (t) clearTimeout(t)
     }
-    // refreshTick como dep: al hacer pull-to-refresh el usuario está
-    // pidiendo un "estado fresco", así que también re-anclamos aunque
-    // roundActivo no haya cambiado.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bracket.roundActivo, refreshTick])
   return (
