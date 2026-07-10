@@ -10,6 +10,7 @@
 // CuadroTeam, cuadroStatus) porque solo se usan juntos, y el componente
 // Bracket que reutiliza MatchCard.
 
+import { useEffect, useRef } from 'react'
 import { TEAMS, OWNER_BY_TEAM, ROUNDS } from '../data.js'
 import { fechaCorta } from '../lib/dates.js'
 import { haptic } from '../haptics.js'
@@ -167,8 +168,21 @@ function enParejas(matches) {
 
 function Cuadro({ bracket }) {
   const porRonda = (r) => bracket.resolved.filter((m) => m.round === r)
+  const scrollRef = useRef(null)
+  // Al montar, aterrizamos directo en la ronda con acción (semis, final,
+  // etc.). Si ya llegó al final y hay campeón, cae ahí. Solo salta cuando
+  // no estamos ya en octavos — no vale la pena scrollear a la primera.
+  useEffect(() => {
+    const scroller = scrollRef.current
+    if (!scroller || bracket.roundActivo === 0) return
+    const cols = scroller.querySelectorAll('.cuadro-col')
+    const target = cols[bracket.roundActivo]
+    if (!target) return
+    // Un pelín de margen izquierdo para dejar ver que hay más a la izq.
+    scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 24), behavior: 'instant' })
+  }, [bracket.roundActivo])
   return (
-    <div className="cuadro-scroll">
+    <div className="cuadro-scroll" ref={scrollRef}>
       <div className="cuadro">
         {[0, 1, 2].map((r) => (
           <div className="cuadro-col" key={r}>
