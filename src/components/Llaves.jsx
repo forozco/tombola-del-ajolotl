@@ -169,17 +169,23 @@ function enParejas(matches) {
 function Cuadro({ bracket }) {
   const porRonda = (r) => bracket.resolved.filter((m) => m.round === r)
   const scrollRef = useRef(null)
-  // Al montar, aterrizamos directo en la ronda con acción (semis, final,
-  // etc.). Si ya llegó al final y hay campeón, cae ahí. Solo salta cuando
-  // no estamos ya en octavos — no vale la pena scrollear a la primera.
+  // Al montar (y en cada refresh) aterrizamos mostrando la ronda anterior
+  // + la actual: el usuario ve el contexto de lo que pasó antes y a dónde
+  // avanzó cada equipo. Ancla en la columna previa a roundActivo — si ya
+  // estamos en octavos (roundActivo === 0), no hay nada que scrollear.
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
-    const cols = scroller.querySelectorAll('.cuadro-col')
-    const target = cols[bracket.roundActivo]
-    if (!target) return
-    // Un pelín de margen izquierdo para dejar ver que hay más a la izq.
-    scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 24), behavior: 'instant' })
+    // rAF para que corra tras el layout inicial — sin esto, en dispositivos
+    // lentos offsetLeft puede leerse antes de que las columnas midan bien.
+    const raf = requestAnimationFrame(() => {
+      const cols = scroller.querySelectorAll('.cuadro-col')
+      const anclaIdx = Math.max(0, bracket.roundActivo - 1)
+      const target = cols[anclaIdx]
+      if (!target) return
+      scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 12), behavior: 'instant' })
+    })
+    return () => cancelAnimationFrame(raf)
   }, [bracket.roundActivo])
   return (
     <div className="cuadro-scroll" ref={scrollRef}>

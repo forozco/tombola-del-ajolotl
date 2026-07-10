@@ -27,16 +27,20 @@ const enParejas = (matches) => {
 export function StreetFighter({ bracket }) {
   const porRonda = (r) => bracket.resolved.filter((m) => m.round === r)
   const scrollRef = useRef(null)
-  // Al montar, aterrizamos directo en la ronda con acción — mismo criterio
-  // que la vista Cuadro. Evita el scroll para nada por columnas ya decididas
-  // (a estas alturas del torneo, octavos y cuartos ya son historia).
+  // Al montar (y en cada refresh) aterrizamos mostrando la ronda anterior
+  // + la actual — mismo criterio que la vista Cuadro. rAF para asegurar
+  // que las columnas ya midieron cuando leemos offsetLeft.
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
-    const cols = scroller.querySelectorAll('.cuadro-col')
-    const target = cols[bracket.roundActivo]
-    if (!target) return
-    scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 24), behavior: 'instant' })
+    const raf = requestAnimationFrame(() => {
+      const cols = scroller.querySelectorAll('.cuadro-col')
+      const anclaIdx = Math.max(0, bracket.roundActivo - 1)
+      const target = cols[anclaIdx]
+      if (!target) return
+      scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 12), behavior: 'instant' })
+    })
+    return () => cancelAnimationFrame(raf)
   }, [bracket.roundActivo])
   return (
     <div className="sf-arcade">
