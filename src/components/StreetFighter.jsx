@@ -12,6 +12,7 @@
 import { useEffect, useRef } from 'react'
 import { OWNERS, ROUNDS } from '../data.js'
 import { ES_BONUS } from '../lib/modes.js'
+import { scrollHorizontalSuave } from '../lib/scroll.js'
 import { LiveVsPanel } from './SfLiveVsPanel.jsx'
 import { NextFightPanel, BonusStageTestMode } from './SfNextFightPanel.jsx'
 import { RosterCell, SfCard } from './SfBracket.jsx'
@@ -36,25 +37,25 @@ export function StreetFighter({ bracket, refreshTick }) {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
     const esRefresh = refreshTick > 0
-    // Smooth solo en pull-to-refresh. En primer mount, instant.
-    const behavior = esRefresh ? 'smooth' : 'auto'
+    let cancelAnim = () => {}
     const anclarEnActiva = () => {
       const cols = scroller.querySelectorAll('.cuadro-col')
       const target = cols[bracket.roundActivo]
       if (!target) return
       const left = Math.max(0, target.offsetLeft - 12)
-      // Ya cerca: no re-scroll. Evita el jerk redundante en iOS.
       if (Math.abs(scroller.scrollLeft - left) < 4) return
-      scroller.scrollTo({ left, behavior })
+      if (esRefresh) {
+        cancelAnim = scrollHorizontalSuave(scroller, left, 320)
+      } else {
+        scroller.scrollLeft = left
+      }
     }
     const raf = requestAnimationFrame(anclarEnActiva)
-    // setTimeout solo en primer mount, para pelear el restore de scroll
-    // del navegador al recargar. En pull-to-refresh un segundo scrollTo
-    // interrumpiría el smooth del primero.
     const t = esRefresh ? null : setTimeout(anclarEnActiva, 120)
     return () => {
       cancelAnimationFrame(raf)
       if (t) clearTimeout(t)
+      cancelAnim()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bracket.roundActivo, refreshTick])
