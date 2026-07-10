@@ -169,17 +169,30 @@ function enParejas(matches) {
 function Cuadro({ bracket }) {
   const porRonda = (r) => bracket.resolved.filter((m) => m.round === r)
   const scrollRef = useRef(null)
-  // Al montar, aterrizamos directo en la ronda con acción (semis, final,
-  // etc.). Si ya llegó al final y hay campeón, cae ahí. Solo salta cuando
-  // no estamos ya en octavos — no vale la pena scrollear a la primera.
+  // Al montar (y en cada refresh) aterrizamos mostrando la ronda anterior
+  // + la activa. Ancla en la columna previa a roundActivo. Si ya estamos
+  // en octavos (roundActivo === 0), no hay nada que scrollear.
+  //
+  // Truco: ejecutamos el scroll dos veces (rAF + setTimeout de 100ms). El
+  // rAF cubre el primer paint; el setTimeout gana la carrera contra el
+  // scrollLeft restaurado por el navegador en el refresh — Chrome/Safari
+  // reaplican el scroll del container guardado en la sesión ANTES o
+  // DESPUÉS de nuestro useEffect según circunstancias, así que forzamos
+  // el nuestro de segundo tiempo también.
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
-    const cols = scroller.querySelectorAll('.cuadro-col')
-    const target = cols[bracket.roundActivo]
-    if (!target) return
-    // Un pelín de margen izquierdo para dejar ver que hay más a la izq.
-    scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 24), behavior: 'instant' })
+    const anclarEnActiva = () => {
+      const cols = scroller.querySelectorAll('.cuadro-col')
+      const target = cols[Math.max(0, bracket.roundActivo - 1)]
+      if (target) scroller.scrollLeft = Math.max(0, target.offsetLeft - 12)
+    }
+    const raf = requestAnimationFrame(anclarEnActiva)
+    const t = setTimeout(anclarEnActiva, 120)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(t)
+    }
   }, [bracket.roundActivo])
   return (
     <div className="cuadro-scroll" ref={scrollRef}>

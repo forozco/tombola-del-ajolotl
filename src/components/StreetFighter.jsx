@@ -27,16 +27,24 @@ const enParejas = (matches) => {
 export function StreetFighter({ bracket }) {
   const porRonda = (r) => bracket.resolved.filter((m) => m.round === r)
   const scrollRef = useRef(null)
-  // Al montar, aterrizamos directo en la ronda con acción — mismo criterio
-  // que la vista Cuadro. Evita el scroll para nada por columnas ya decididas
-  // (a estas alturas del torneo, octavos y cuartos ya son historia).
+  // Al montar (y en cada refresh) aterrizamos mostrando la ronda anterior
+  // + la activa. Doble intento (rAF + setTimeout de 120ms) para ganar la
+  // carrera contra el scrollLeft que Chrome/Safari restauran del container
+  // al refrescar. Ver comentario detallado en Llaves.jsx Cuadro.
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
-    const cols = scroller.querySelectorAll('.cuadro-col')
-    const target = cols[bracket.roundActivo]
-    if (!target) return
-    scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 24), behavior: 'instant' })
+    const anclarEnActiva = () => {
+      const cols = scroller.querySelectorAll('.cuadro-col')
+      const target = cols[Math.max(0, bracket.roundActivo - 1)]
+      if (target) scroller.scrollLeft = Math.max(0, target.offsetLeft - 12)
+    }
+    const raf = requestAnimationFrame(anclarEnActiva)
+    const t = setTimeout(anclarEnActiva, 120)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(t)
+    }
   }, [bracket.roundActivo])
   return (
     <div className="sf-arcade">
