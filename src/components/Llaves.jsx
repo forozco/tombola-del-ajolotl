@@ -170,22 +170,29 @@ function Cuadro({ bracket }) {
   const porRonda = (r) => bracket.resolved.filter((m) => m.round === r)
   const scrollRef = useRef(null)
   // Al montar (y en cada refresh) aterrizamos mostrando la ronda anterior
-  // + la actual: el usuario ve el contexto de lo que pasó antes y a dónde
-  // avanzó cada equipo. Ancla en la columna previa a roundActivo — si ya
-  // estamos en octavos (roundActivo === 0), no hay nada que scrollear.
+  // + la activa. Ancla en la columna previa a roundActivo. Si ya estamos
+  // en octavos (roundActivo === 0), no hay nada que scrollear.
+  //
+  // Truco: ejecutamos el scroll dos veces (rAF + setTimeout de 100ms). El
+  // rAF cubre el primer paint; el setTimeout gana la carrera contra el
+  // scrollLeft restaurado por el navegador en el refresh — Chrome/Safari
+  // reaplican el scroll del container guardado en la sesión ANTES o
+  // DESPUÉS de nuestro useEffect según circunstancias, así que forzamos
+  // el nuestro de segundo tiempo también.
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
-    // rAF para que corra tras el layout inicial — sin esto, en dispositivos
-    // lentos offsetLeft puede leerse antes de que las columnas midan bien.
-    const raf = requestAnimationFrame(() => {
+    const anclarEnActiva = () => {
       const cols = scroller.querySelectorAll('.cuadro-col')
-      const anclaIdx = Math.max(0, bracket.roundActivo - 1)
-      const target = cols[anclaIdx]
-      if (!target) return
-      scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 12), behavior: 'instant' })
-    })
-    return () => cancelAnimationFrame(raf)
+      const target = cols[Math.max(0, bracket.roundActivo - 1)]
+      if (target) scroller.scrollLeft = Math.max(0, target.offsetLeft - 12)
+    }
+    const raf = requestAnimationFrame(anclarEnActiva)
+    const t = setTimeout(anclarEnActiva, 120)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(t)
+    }
   }, [bracket.roundActivo])
   return (
     <div className="cuadro-scroll" ref={scrollRef}>
