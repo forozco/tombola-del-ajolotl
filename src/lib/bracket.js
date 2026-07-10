@@ -99,5 +99,22 @@ export function computeBracket(results, live = {}, detalles = {}) {
     }
   }
   const champion = resolved.find((m) => m.id === 'f1')?.winner ?? null
-  return { resolved, eliminated, champion }
+  // Ronda "actual" del torneo: la más temprana que aún tenga partidos por
+  // resolver. Sirve para que el bracket (Cuadro y Street Fighter) abra
+  // directo en la ronda con acción, en vez de forzar scroll desde Octavos.
+  // Si ya no queda ninguno por resolver, apunta a la final (donde vive el
+  // campeón).
+  let roundActivo = 3
+  for (let r = 0; r < 4; r++) {
+    const partidosDeRonda = resolved.filter((m) => m.round === r)
+    if (partidosDeRonda.length === 0) continue
+    const algunoPendiente = partidosDeRonda.some(
+      (m) => !m.winner && m.live?.state !== 'post'
+    )
+    if (algunoPendiente) {
+      roundActivo = r
+      break
+    }
+  }
+  return { resolved, eliminated, champion, roundActivo }
 }

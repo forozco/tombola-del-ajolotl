@@ -9,6 +9,7 @@
 //   - Bracket: mismas 4 columnas y líneas del Cuadro (reusa su geometría CSS)
 //     con tarjetas de pelea — SfBracket
 
+import { useEffect, useRef } from 'react'
 import { OWNERS, ROUNDS } from '../data.js'
 import { ES_BONUS } from '../lib/modes.js'
 import { LiveVsPanel } from './SfLiveVsPanel.jsx'
@@ -25,6 +26,18 @@ const enParejas = (matches) => {
 
 export function StreetFighter({ bracket }) {
   const porRonda = (r) => bracket.resolved.filter((m) => m.round === r)
+  const scrollRef = useRef(null)
+  // Al montar, aterrizamos directo en la ronda con acción — mismo criterio
+  // que la vista Cuadro. Evita el scroll para nada por columnas ya decididas
+  // (a estas alturas del torneo, octavos y cuartos ya son historia).
+  useEffect(() => {
+    const scroller = scrollRef.current
+    if (!scroller || bracket.roundActivo === 0) return
+    const cols = scroller.querySelectorAll('.cuadro-col')
+    const target = cols[bracket.roundActivo]
+    if (!target) return
+    scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 24), behavior: 'instant' })
+  }, [bracket.roundActivo])
   return (
     <div className="sf-arcade">
       <div className="sf-marquee">STREET FIGHTER</div>
@@ -43,7 +56,7 @@ export function StreetFighter({ bracket }) {
         ))}
       </div>
 
-      <div className="cuadro-scroll sf-scroll">
+      <div className="cuadro-scroll sf-scroll" ref={scrollRef}>
         <div className="cuadro sf-cuadro">
           {[0, 1, 2].map((r) => (
             <div className="cuadro-col" key={r}>
