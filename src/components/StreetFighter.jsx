@@ -35,26 +35,27 @@ export function StreetFighter({ bracket, refreshTick }) {
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
-    // Smooth solo en pull-to-refresh (gesto del usuario merece feedback
-    // visual); en primer mount, instant para que la app abra ya donde
-    // debe sin verse un glitch de animación.
-    const behavior = refreshTick > 0 ? 'smooth' : 'auto'
+    const esRefresh = refreshTick > 0
+    // Smooth solo en pull-to-refresh. En primer mount, instant.
+    const behavior = esRefresh ? 'smooth' : 'auto'
     const anclarEnActiva = () => {
       const cols = scroller.querySelectorAll('.cuadro-col')
       const target = cols[bracket.roundActivo]
-      if (target) {
-        scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 12), behavior })
-      }
+      if (!target) return
+      const left = Math.max(0, target.offsetLeft - 12)
+      // Ya cerca: no re-scroll. Evita el jerk redundante en iOS.
+      if (Math.abs(scroller.scrollLeft - left) < 4) return
+      scroller.scrollTo({ left, behavior })
     }
     const raf = requestAnimationFrame(anclarEnActiva)
-    const t = setTimeout(anclarEnActiva, 120)
+    // setTimeout solo en primer mount, para pelear el restore de scroll
+    // del navegador al recargar. En pull-to-refresh un segundo scrollTo
+    // interrumpiría el smooth del primero.
+    const t = esRefresh ? null : setTimeout(anclarEnActiva, 120)
     return () => {
       cancelAnimationFrame(raf)
-      clearTimeout(t)
+      if (t) clearTimeout(t)
     }
-    // refreshTick como dep: al hacer pull-to-refresh el usuario está
-    // pidiendo un "estado fresco", así que también re-anclamos aunque
-    // roundActivo no haya cambiado.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bracket.roundActivo, refreshTick])
   return (
