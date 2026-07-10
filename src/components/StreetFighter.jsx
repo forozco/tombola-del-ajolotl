@@ -35,10 +35,16 @@ export function StreetFighter({ bracket, refreshTick }) {
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
+    // Smooth solo en pull-to-refresh (gesto del usuario merece feedback
+    // visual); en primer mount, instant para que la app abra ya donde
+    // debe sin verse un glitch de animación.
+    const behavior = refreshTick > 0 ? 'smooth' : 'auto'
     const anclarEnActiva = () => {
       const cols = scroller.querySelectorAll('.cuadro-col')
       const target = cols[bracket.roundActivo]
-      if (target) scroller.scrollLeft = Math.max(0, target.offsetLeft - 12)
+      if (target) {
+        scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 12), behavior })
+      }
     }
     const raf = requestAnimationFrame(anclarEnActiva)
     const t = setTimeout(anclarEnActiva, 120)

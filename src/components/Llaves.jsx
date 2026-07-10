@@ -184,10 +184,16 @@ function Cuadro({ bracket, refreshTick }) {
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
+    // En primer mount no hay animación (la app apenas cargó, un scroll
+    // suave se ve como un glitch). En pull-to-refresh sí animamos para
+    // que el gesto tenga feedback visual del re-anclaje.
+    const behavior = refreshTick > 0 ? 'smooth' : 'auto'
     const anclarEnActiva = () => {
       const cols = scroller.querySelectorAll('.cuadro-col')
       const target = cols[bracket.roundActivo]
-      if (target) scroller.scrollLeft = Math.max(0, target.offsetLeft - 12)
+      if (target) {
+        scroller.scrollTo({ left: Math.max(0, target.offsetLeft - 12), behavior })
+      }
     }
     const raf = requestAnimationFrame(anclarEnActiva)
     const t = setTimeout(anclarEnActiva, 120)
