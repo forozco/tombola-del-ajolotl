@@ -27,16 +27,17 @@ const enParejas = (matches) => {
 export function StreetFighter({ bracket }) {
   const porRonda = (r) => bracket.resolved.filter((m) => m.round === r)
   const scrollRef = useRef(null)
-  // Al montar (y en cada refresh) aterrizamos mostrando la ronda anterior
-  // + la activa. Doble intento (rAF + setTimeout de 120ms) para ganar la
-  // carrera contra el scrollLeft que Chrome/Safari restauran del container
-  // al refrescar. Ver comentario detallado en Llaves.jsx Cuadro.
+  // Al montar (y en cada refresh) aterrizamos directo en la ronda con
+  // acción — ancla en roundActivo, con la columna previa asomándose por
+  // el offset (-12px) para dar contexto. Doble intento (rAF + setTimeout
+  // de 120ms) para ganar la carrera contra el scrollLeft que Chrome y
+  // Safari restauran del container al refrescar.
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
     const anclarEnActiva = () => {
       const cols = scroller.querySelectorAll('.cuadro-col')
-      const target = cols[Math.max(0, bracket.roundActivo - 1)]
+      const target = cols[bracket.roundActivo]
       if (target) scroller.scrollLeft = Math.max(0, target.offsetLeft - 12)
     }
     const raf = requestAnimationFrame(anclarEnActiva)

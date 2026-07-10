@@ -169,22 +169,24 @@ function enParejas(matches) {
 function Cuadro({ bracket }) {
   const porRonda = (r) => bracket.resolved.filter((m) => m.round === r)
   const scrollRef = useRef(null)
-  // Al montar (y en cada refresh) aterrizamos mostrando la ronda anterior
-  // + la activa. Ancla en la columna previa a roundActivo. Si ya estamos
-  // en octavos (roundActivo === 0), no hay nada que scrollear.
+  // Al montar (y en cada refresh) aterrizamos directo en la ronda con
+  // acción. Ancla en la columna correspondiente a roundActivo — la
+  // columna anterior queda parcialmente visible por el offset (-12px),
+  // lo que sirve de contexto sin ocultar la ronda activa como columna
+  // principal. Si ya estamos en octavos (roundActivo === 0), no hay
+  // nada que scrollear.
   //
-  // Truco: ejecutamos el scroll dos veces (rAF + setTimeout de 100ms). El
-  // rAF cubre el primer paint; el setTimeout gana la carrera contra el
-  // scrollLeft restaurado por el navegador en el refresh — Chrome/Safari
-  // reaplican el scroll del container guardado en la sesión ANTES o
-  // DESPUÉS de nuestro useEffect según circunstancias, así que forzamos
-  // el nuestro de segundo tiempo también.
+  // Truco: ejecutamos el scroll dos veces (rAF + setTimeout de 120ms).
+  // El rAF cubre el primer paint; el setTimeout gana la carrera contra
+  // el scrollLeft restaurado por el navegador en el refresh —
+  // Chrome/Safari reaplican el scroll del container guardado en la
+  // sesión, y a veces ese restore ocurre después de nuestro useEffect.
   useEffect(() => {
     const scroller = scrollRef.current
     if (!scroller || bracket.roundActivo === 0) return
     const anclarEnActiva = () => {
       const cols = scroller.querySelectorAll('.cuadro-col')
-      const target = cols[Math.max(0, bracket.roundActivo - 1)]
+      const target = cols[bracket.roundActivo]
       if (target) scroller.scrollLeft = Math.max(0, target.offsetLeft - 12)
     }
     const raf = requestAnimationFrame(anclarEnActiva)
