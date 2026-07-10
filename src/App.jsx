@@ -121,10 +121,17 @@ export default function App() {
     }
   }, [bracket, applyLive])
 
+  // Contador que se bumpéa en cada pull-to-refresh. Las vistas del bracket
+  // (Cuadro y Street Fighter) lo leen como dep de su useEffect de scroll
+  // horizontal, así al hacer pull-to-refresh vuelven a anclar en la ronda
+  // activa aunque el usuario se haya movido con el dedo.
+  const [refreshTick, setRefreshTick] = useState(0)
+
   // Refresh del pull-to-refresh: re-consulta ambas fuentes sin recargar la
   // página (nada de parpadeo) y de paso verifica si hay una versión nueva
   // del service worker.
   const onRefresh = useCallback(async () => {
+    setRefreshTick((t) => t + 1)
     await Promise.all([refetch(), refetchLive()])
     try {
       const reg = await navigator.serviceWorker?.getRegistration()
@@ -164,7 +171,13 @@ export default function App() {
       <div className="tab-content" key={tab}>
         {tab === 'hoy' && <Hoy bracket={bracket} onPick={pick} />}
         {tab === 'llaves' && (
-          <Llaves bracket={bracket} vista={vista} setVista={cambiarVista} onPick={pick} />
+          <Llaves
+            bracket={bracket}
+            vista={vista}
+            setVista={cambiarVista}
+            onPick={pick}
+            refreshTick={refreshTick}
+          />
         )}
         {tab === 'amigos' && <Amigos bracket={bracket} />}
       </div>

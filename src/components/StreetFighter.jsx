@@ -24,7 +24,7 @@ const enParejas = (matches) => {
   return pares
 }
 
-export function StreetFighter({ bracket }) {
+export function StreetFighter({ bracket, refreshTick }) {
   const porRonda = (r) => bracket.resolved.filter((m) => m.round === r)
   const scrollRef = useRef(null)
   // Al montar (y en cada refresh) aterrizamos directo en la ronda con
@@ -46,7 +46,11 @@ export function StreetFighter({ bracket }) {
       cancelAnimationFrame(raf)
       clearTimeout(t)
     }
-  }, [bracket.roundActivo])
+    // refreshTick como dep: al hacer pull-to-refresh el usuario está
+    // pidiendo un "estado fresco", así que también re-anclamos aunque
+    // roundActivo no haya cambiado.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bracket.roundActivo, refreshTick])
   return (
     <div className="sf-arcade">
       <div className="sf-marquee">STREET FIGHTER</div>
