@@ -53,6 +53,7 @@ export function detalleDe(m) {
     shootout: ev.shootout ?? {},
     finish: ev.finish,
     goals: ev.goals ?? [],
+    corners: ev.corners ?? null,
     winnerId: ev.winnerId,
     venue: ev.venue ?? null,
   }
