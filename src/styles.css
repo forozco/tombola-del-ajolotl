@@ -1382,6 +1382,47 @@ button,
   }
 }
 
+/* ── Tiros de esquina (córners) ── */
+/* Mismo lenguaje visual que la posesión pero sin track — son enteros, no %.
+   Cuando aparece directamente debajo de .possession quitamos el border-top
+   y el padding-top para que las dos filas se lean como un mismo bloque
+   "match stats". Standalone conserva su propio divisor y padding normal. */
+.corners {
+  padding: 8px 12px 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  animation: poss-in 0.4s var(--ease-out) both;
+}
+
+.possession + .corners {
+  border-top: none;
+  padding-top: 0;
+}
+
+.corners-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.corners-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .corners {
+    animation: none;
+  }
+}
+
 @keyframes score-pop {
   0% {
     transform: scale(1);

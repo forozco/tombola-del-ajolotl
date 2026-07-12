@@ -90,6 +90,16 @@ function simPosesion(m, tSeg) {
   return { home, away: 100 - home }
 }
 
+// Córners virtuales: crecen con el minuto (0 al arranque, ~10-11 al 90). Se
+// inclinan levemente hacia el ganador. Enteros por diseño — ESPN los da así.
+function simCorners(m, minuto) {
+  const t = Math.max(0, Math.min(1, minuto / 90))
+  const total = Math.floor(t * 11)
+  const homePct = m.winner === 'home' ? 0.55 : 0.45
+  const home = Math.round(total * homePct)
+  return { home, away: total - home }
+}
+
 // Estadios FIFA-oficiales del Mundial 2026 asignados por equipo anfitrión
 // (para dar variedad al demo). Nomenclatura FIFA "clean venue": los nombres
 // comerciales (MetLife, SoFi, AT&T, etc.) se reemplazan por "[Ciudad] Stadium"
@@ -177,6 +187,7 @@ export function simLive(tSeg = (Date.now() - START) / 1000) {
         score: scoreStr,
         shootout: {}, winnerId: null, finish: null, goals,
         possession: simPosesion(m, tSeg),
+        corners: simCorners(m, minuto),
         venue: STADIUMS[m.home] ?? null,
       }
     }

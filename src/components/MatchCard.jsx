@@ -4,11 +4,12 @@
 // con su bandera + dueño + gol × gol, la crónica del resultado en clave de
 // quiniela cuando ya se decidió, y la barra de posesión sutil al final.
 //
-// Ensambla 4 sub-componentes que solo tienen sentido en su contexto y que
-// por eso viven en el mismo archivo (cohesión alta):
+// Ensambla varios sub-componentes que solo tienen sentido en su contexto y
+// que por eso viven en el mismo archivo (cohesión alta):
 //   - TeamRow: renglón de un equipo (bandera, nombre, dueño, marcador)
 //   - FriendOutcome: "Fertl avanza · Phoccotl sigue vivo con Canadá"
 //   - PossessionBar: barra fina de posesión (solo si ESPN la dio)
+//   - CornersRow: contador de tiros de esquina, mismo estilo que la posesión
 //   - GolesDe: lista de goles de un equipo, bajo su renglón
 
 import { TEAMS, OWNER_BY_TEAM, ROUNDS, POZO } from '../data.js'
@@ -94,6 +95,28 @@ function FriendOutcome({ match, bracket }) {
       {vivos.length
         ? `sigue vivo con ${vivos.map((t) => TEAMS[t].name).join(' y ')}`
         : 'queda eliminado'}
+    </div>
+  )
+}
+
+// Fila de tiros de esquina: dato de "sabor" al pie de la card, mismo estilo
+// visual que la posesión pero sin barra (son enteros, no %). Cuando aparece
+// justo debajo de la posesión, el CSS omite su border-top para que se lea
+// como parte del mismo bloque stats. Fade-in al aparecer.
+function CornersRow({ match }) {
+  const c = match.live?.corners
+  if (!c || !match.homeTeam || !match.awayTeam) return null
+  const homeName = TEAMS[match.homeTeam]?.name
+  const awayName = TEAMS[match.awayTeam]?.name
+  return (
+    <div
+      className="corners"
+      role="img"
+      aria-label={`Tiros de esquina: ${homeName} ${c.home}, ${awayName} ${c.away}`}
+    >
+      <span className="corners-count">{c.home}</span>
+      <span className="corners-label">Tiros de esquina</span>
+      <span className="corners-count">{c.away}</span>
     </div>
   )
 }
@@ -281,6 +304,7 @@ export function MatchCard({ match, champion, bracket, meta, onPick }) {
       {meta && <GolesDe match={match} teamId={match.awayTeam} />}
       {meta && <TarjetasDe match={match} teamId={match.awayTeam} />}
       {meta && <PossessionBar match={match} />}
+      {meta && <CornersRow match={match} />}
     </div>
   )
 }

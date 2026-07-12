@@ -42,10 +42,13 @@ function alteredStatus(typeName, description) {
   return null
 }
 
-// Extrae la posesión % de un partido del endpoint summary. Falla en silencio si
-// ESPN no la devuelve todavía (los primeros minutos), o si la forma cambia:
-// mejor no mostrar nada que mostrar basura.
-async function fetchPossession(eventId) {
+// Extrae estadísticas de un partido del endpoint summary: posesión % y córners.
+// Un solo request cubre las dos, así no gastamos cuota adicional.
+//
+// Falla en silencio para cada stat por separado — si ESPN no llena córners
+// (primeros minutos, arqueros dominan) pero sí posesión, mostramos posesión
+// nomás. Mejor null selectivo que "nada" o "0-0" falso.
+async function fetchStats(eventId) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 10_000)
   try {
@@ -54,18 +57,27 @@ async function fetchPossession(eventId) {
     const data = await res.json()
     const teams = data.boxscore?.teams
     if (!teams || teams.length < 2) return null
-    const pct = (t) => {
-      const s = t.statistics?.find((s) => /possess/i.test(s.name ?? ''))
+    // Busca un stat por regex sobre `name` (interno de ESPN); usa displayValue
+    // como fallback si `value` no es numérico. Devuelve entero o null.
+    const stat = (t, matcher, parse = Math.round) => {
+      const s = t.statistics?.find((x) => matcher.test(x.name ?? ''))
       if (!s) return null
       const v = Number(s.value ?? parseFloat(s.displayValue))
-      return Number.isFinite(v) ? Math.round(v) : null
+      return Number.isFinite(v) ? parse(v) : null
     }
     const home = teams.find((t) => t.homeAway === 'home') ?? teams[0]
     const away = teams.find((t) => t.homeAway === 'away') ?? teams[1]
-    const h = pct(home)
-    const a = pct(away)
-    if (h == null || a == null) return null
-    return { home: h, away: a }
+    const hPos = stat(home, /possess/i)
+    const aPos = stat(away, /possess/i)
+    // ESPN entrega córners bajo `wonCorners` (a veces `cornerKicks` en otras
+    // ligas). El regex cubre ambos. Son enteros, no % — Math.floor por si
+    // por alguna razón viniera con decimales.
+    const hCor = stat(home, /(wonCorners|cornerKicks)/i, Math.floor)
+    const aCor = stat(away, /(wonCorners|cornerKicks)/i, Math.floor)
+    const possession = hPos != null && aPos != null ? { home: hPos, away: aPos } : null
+    const corners = hCor != null && aCor != null ? { home: hCor, away: aCor } : null
+    if (!possession && !corners) return null
+    return { possession, corners }
   } catch {
     return null
   } finally {
@@ -174,16 +186,19 @@ export async function fetchLive() {
     }
   }
 
-  // Segunda ronda solo para partidos en vivo: enriquecer con posesión %.
-  // Se hace en paralelo; si un summary falla o ESPN no la trae todavía (los
-  // primeros minutos), se conserva el resto sin ruido.
+  // Segunda ronda solo para partidos en vivo: enriquecer con stats detallados
+  // (posesión % + córners). Se hace en paralelo; si un summary falla o ESPN
+  // no la trae todavía (los primeros minutos), se conserva el resto sin ruido.
   const enVivo = Object.entries(out).filter(([, ev]) => ev.state === 'in')
   if (enVivo.length) {
-    const posesiones = await Promise.all(
-      enVivo.map(([key]) => fetchPossession(eventIdByKey[key]))
+    const stats = await Promise.all(
+      enVivo.map(([key]) => fetchStats(eventIdByKey[key]))
     )
     enVivo.forEach(([key], i) => {
-      if (posesiones[i]) out[key].possession = posesiones[i]
+      const s = stats[i]
+      if (!s) return
+      if (s.possession) out[key].possession = s.possession
+      if (s.corners) out[key].corners = s.corners
     })
   }
 
