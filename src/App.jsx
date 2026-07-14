@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { computeBracket } from './lib/bracket.js'
 import { marcadorTexto, detalleDe } from './lib/matches.js'
 import { useResults } from './hooks/useResults.js'
@@ -187,6 +188,7 @@ export default function App() {
       <Footer />
 
       {creditosAbierto ? <Creditos bracket={bracket} /> : null}
+      <Analytics />
     </div>
   )
 }
